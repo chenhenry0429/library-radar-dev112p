@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>座位与坐姿 · 离线回放</title>
+<style>
+:root{--ink:#152e38;--muted:#637c86;--line:#d9e4e7;--teal:#087f78;--bg:#f1f6f6}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Microsoft YaHei",system-ui,sans-serif}header{background:#123740;color:white;padding:28px max(24px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;align-items:center;gap:20px}h1{font-size:25px;margin:3px 0;font-weight:600}header small{color:#9bc8c8;letter-spacing:2px}header p{margin:0;color:#bad1d5;font-size:13px}main{max-width:1228px;margin:auto;padding:24px}button,select,.file-button{font:inherit;border:1px solid #b9ced2;border-radius:8px;padding:9px 16px;background:white;color:var(--ink);cursor:pointer}button:hover,.file-button:hover{background:#e7f4f1}button:disabled{opacity:.5;cursor:default}.primary{background:var(--teal);color:white;border-color:var(--teal)}.primary:hover{background:#086c66}.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}.import{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.import .copy{flex:1;min-width:260px}h2{font-size:17px;margin:0 0 4px}p{margin:3px 0}.muted{color:var(--muted);font-size:13px}.badge{display:inline-block;background:#d9eee9;color:#086b5f;padding:3px 11px;border-radius:30px;font-size:12px}.badge.warn{background:#fff0ce;color:#94620c}.badge.dark{background:#28505a;color:#d8eeed}.error{color:#aa3434;background:#fff0ef;padding:10px 14px;border-radius:8px;white-space:pre-wrap;margin-top:12px}.hidden{display:none!important}.meta{display:flex;justify-content:space-between;gap:15px;align-items:center;margin:22px 0 12px}.meta strong{font-size:16px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card{background:white;border:1px solid var(--line);border-radius:12px;padding:19px}.label{font-size:13px;color:var(--muted)}.value{font-size:27px;font-weight:600;line-height:1.5;margin:8px 0}.sub{font-size:12px;color:var(--muted);min-height:20px}.status-good{color:var(--teal)}.status-warn{color:#a46a05}.layout{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}.time{font-size:36px;font-variant-numeric:tabular-nums;font-weight:600}.time small{font-size:15px;color:var(--muted);font-weight:400}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}.scrub{width:100%;accent-color:var(--teal);margin:18px 0 6px}.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}.track{display:flex;height:24px;border-radius:6px;overflow:hidden;margin-top:20px;background:#edf1f2}.legend{display:flex;gap:12px;font-size:12px;flex-wrap:wrap;margin-top:9px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.notice{background:#f0f7f6;border-left:3px solid var(--teal);padding:14px;margin-top:18px;min-height:80px}.notice strong{font-size:15px}.facts{display:grid;grid-template-columns:100px 1fr;gap:9px 12px;font-size:13px;margin-top:18px}.facts dt{color:var(--muted)}.facts dd{margin:0;overflow-wrap:anywhere}.table-wrap{overflow:auto;max-height:370px}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}th{color:var(--muted);background:#f5f8f9;position:sticky;top:0}th,td{padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap}td:last-child{white-space:normal;min-width:230px}tr.future{opacity:.38}tr.selected{background:#edf7f3}tbody tr{cursor:pointer}.section-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}footer{text-align:center;color:var(--muted);font-size:12px;padding:12px 0 30px}input[type=file]{position:absolute;width:1px;height:1px;opacity:0}button:focus-visible,select:focus-visible,.file-button:focus-within{outline:3px solid #5ebcae;outline-offset:3px}@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}header{padding:22px}main{padding:16px}.meta{align-items:flex-start;flex-direction:column}}@media(max-width:430px){.cards{grid-template-columns:1fr 1fr}.value{font-size:22px}.card{padding:13px}header .badge{display:none}}
+</style>
+<header><div><small>RADAR / OFFLINE LAB</small><h1>座位占用与坐姿回放</h1><p>读取 A 端运行结果，按采集时间查看状态与事件</p></div><span class="badge dark">本地离线 · 文件不上传</span></header>
+<main>
+ <section class="panel"><div class="import"><div class="copy"><h2>打开一次运行结果</h2><p class="muted">同时选择同一输出目录中的 timeline.csv、events.csv、run.json。</p></div><button id="demo">载入模拟演示</button><label class="file-button primary" tabindex="0">选择结果文件<input id="files" type="file" multiple accept=".csv,.json"></label></div><div id="error" role="alert" class="error hidden"></div></section>
+ <div id="empty" class="panel"><h2>从模拟演示开始</h2><p class="muted">点击“载入模拟演示”，或导入你刚刚运行得到的三个文件。此页面只回放已有结果，不重新运行算法。</p></div>
+ <div id="workspace" class="hidden">
+  <div class="meta"><strong id="recording"></strong><div><span id="source" class="badge"></span> <span id="ended" class="badge"></span></div></div>
+  <div class="cards">
+   <div class="card"><div class="label">座位占用</div><div id="occupancy" class="value"></div><div id="occupancySub" class="sub"></div></div>
+   <div class="card"><div class="label">坐姿状态</div><div id="posture" class="value"></div><div id="postureSub" class="sub"></div></div>
+   <div class="card"><div class="label">个人标定</div><div id="calibration" class="value"></div><div class="sub">以 A 端实际允许使用的参考为准</div></div>
+   <div class="card"><div class="label">提醒状态</div><div id="reminder" class="value"></div><div id="reminderSub" class="sub"></div></div>
+  </div>
+  <div class="layout">
+   <section class="panel"><div class="section-head"><h2>时间回放</h2><span id="frame" class="muted"></span></div><div class="time"><span id="time">0.0</span> <small>秒 / <span id="duration"></span> 秒</small></div>
+    <input id="scrub" class="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="数据时间"><div class="ticks"><span id="startTime"></span><span id="endTime"></span></div>
+    <div class="controls"><button id="play" class="primary">播放</button><button id="restart">回到开始</button><label class="muted">速度 <select id="speed" aria-label="回放速度"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option></select></label><button id="next">下一事件 →</button></div>
+    <div id="track" class="track" aria-label="占用状态时间带"></div><div class="legend"><span><i class="dot" style="background:#bdced5"></i>未知</span><span><i class="dot" style="background:#b9ddd6"></i>空闲</span><span><i class="dot" style="background:#168b80"></i>使用中</span><span><i class="dot" style="background:#e6b352"></i>离座等待</span><span><i class="dot" style="background:#6fadb6"></i>已释放</span></div>
+    <p class="muted" style="margin-top:15px">倍速只改变显示速度。计时和事件均读取原始输出，不重新计算。</p>
+   </section>
+   <section class="panel"><h2>当前记录</h2><div class="notice" aria-live="polite"><strong id="noticeTitle"></strong><p id="noticeBody" class="muted"></p></div><dl class="facts"><dt>座位</dt><dd id="seat"></dd><dt>占用会话</dt><dd id="session"></dd><dt>姿态累计</dt><dd id="elapsed"></dd><dt>释放剩余</dt><dd id="remaining"></dd><dt>算法版本</dt><dd id="algorithm"></dd><dt>参数版本</dt><dd id="parameters"></dd><dt>原始帧对齐</dt><dd id="alignment"></dd></dl></section>
+  </div>
+  <section class="panel"><div class="section-head"><div><h2>事件记录</h2><p class="muted">点击任一行跳转。浅色行表示回放尚未到达的事件。</p></div><span id="eventCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>时间 / 秒</th><th>事件</th><th>状态变化</th><th>原因</th></tr></thead><tbody id="events"></tbody></table></div></section>
+ </div>
+</main><footer>DEV112P 项目 · A 端离线查看器 · 模拟数据用于业务验证，不能代表雷达识别性能</footer>
+<script src="demo-data.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const names={unknown:'未知',idle:'空闲',in_use:'使用中',leave_wait:'离座等待',released:'已释放',reference:'参考范围',forward:'明显前倾',backward:'明显后靠',not_applicable:'不适用',uncalibrated:'未标定',calibrating:'标定中',valid:'有效',invalid:'已失效',accumulating:'累计中',reminded:'已提醒',cooldown:'冷却中',paused:'已暂停'};
+const eventNames={occupancy_change:'占用变化',posture_change:'姿态变化',reminder:'姿态提醒',calibration_required:'需要标定',data_gap:'数据缺口',review_required:'人工复核'};
+const colors={unknown:'#bdced5',idle:'#b9ddd6',in_use:'#168b80',leave_wait:'#e6b352',released:'#6fadb6'};
+const timelineFields='frame_id timestamp seat_id session_id occupancy_state occupancy_pending posture_state calibration_status posture_elapsed_s release_remaining_s reminder_state review_required'.split(' ');
+const eventFields='timestamp frame_id seat_id session_id event_type from_state to_state reason'.split(' ');
+let data=null,index=0,clock=0,playing=false,lastWall=0,animation=0;
+function label(s){return names[s]||s||'—'}
+function text(id,s){$(id).textContent=s}
+function fail(e){text('error',e.message||String(e));$('error').classList.remove('hidden')}
+function clearError(){$('error').classList.add('hidden')}
+function csv(textValue,fields,name){
+ // 支持 UTF-8 BOM、CRLF、引号、引号中的逗号及换行。
+ const source=textValue.replace(/^\uFEFF/,'');let rows=[],row=[],value='',quoted=false,closed=false;
+ for(let i=0;i<source.length;i++){let c=source[i];if(quoted){if(c==='"'){if(source[i+1]==='"'){value+='"';i++}else{quoted=false;closed=true}}else value+=c;continue}
+  if(c==='"'){if(value||closed)throw Error(name+'：引号位置错误');quoted=true;continue}
+  if(c===','||c==='\n'||c==='\r'){row.push(value);value='';closed=false;if(c!==','){if(c==='\r'&&source[i+1]==='\n')i++;rows.push(row);row=[]}continue}
+  if(closed)throw Error(name+'：引号结束后出现多余字符');value+=c;
+ }
+ if(quoted)throw Error(name+'：引号未闭合');if(value!==''||row.length||closed){row.push(value);rows.push(row)}
+ if(!rows.length||JSON.stringify(rows.shift())!==JSON.stringify(fields))throw Error(name+'：表头与接口规范不一致');
+ return rows.map((r,i)=>{if(r.length!==fields.length)throw Error(name+'：第 '+(i+2)+' 行列数不一致');return Object.fromEntries(fields.map((f,k)=>[f,r[k]]))});
+}
+function numeric(value,name){if(String(value).trim()===''||!Number.isFinite(Number(value)))throw Error(name+' 不是有限数值');return Number(value)}
+function validate(bundle){
+ if(!bundle||!Array.isArray(bundle.timeline)||!Array.isArray(bundle.events)||!bundle.run)throw Error('结果包不完整');
+ const b=structuredClone(bundle),run=b.run;
+ if(run.schema_version!=='1.0'||!['synthetic','measured'].includes(run.source_kind)||!run.recording_id||!run.run_id)throw Error('run.json 版本、来源或采集编号无效');
+ if(!b.timeline.length)throw Error('timeline.csv 没有记录');
+ let previous=-1,seat=b.timeline[0].seat_id;
+ b.timeline.forEach((r,i)=>{timelineFields.forEach(k=>{if(!(k in r))throw Error('时间线缺少 '+k)});r.timestamp=numeric(r.timestamp,'timestamp');r.frame_id=numeric(r.frame_id,'frame_id');
+  if(r.timestamp<0||r.timestamp<=previous||r.frame_id!==i)throw Error('时间线第 '+(i+2)+' 行时间不递增或帧号不连续');previous=r.timestamp;
+  if(!seat||r.seat_id!==seat)throw Error('同一次运行只能包含一个座位');
+  if(!(r.occupancy_state in colors)||!['reference','forward','backward','unknown','not_applicable'].includes(r.posture_state)||!['uncalibrated','calibrating','valid','invalid'].includes(r.calibration_status)||!['idle','accumulating','reminded','cooldown','paused'].includes(r.reminder_state))throw Error('时间线第 '+(i+2)+' 行存在非法状态');
+  for(const key of ['occupancy_pending','review_required']){r[key]=numeric(r[key],key);if(![0,1].includes(r[key]))throw Error(key+' 必须是 0 或 1')}
+  for(const key of ['posture_elapsed_s','release_remaining_s'])if(r[key]!==''){r[key]=numeric(r[key],key);if(r[key]<0)throw Error(key+' 不能为负')}
+ });
+ let eventTime=-1;
+ b.events.forEach((e,i)=>{eventFields.forEach(k=>{if(!(k in e))throw Error('事件记录缺少 '+k)});e.timestamp=numeric(e.timestamp,'事件时间');e.frame_id=numeric(e.frame_id,'事件帧号');const r=b.timeline[e.frame_id];if(!r||r.timestamp!==e.timestamp||e.seat_id!==seat||e.timestamp<eventTime||!(e.event_type in eventNames))throw Error('事件第 '+(i+2)+' 行与时间线不匹配或类型无效');eventTime=e.timestamp});
+ if((run.frame_count!==undefined&&run.frame_count!==b.timeline.length)||(run.event_count!==undefined&&run.event_count!==b.events.length)||run.end_timestamp!==previous)throw Error('run.json 的数量或结束时间与 CSV 不匹配，请选择同一次运行的三个文件');
+ return b;
+}
+function pause(){playing=false;cancelAnimationFrame(animation);text('play','播放')}
+function load(bundle){const next=validate(bundle);pause();data=next;clock=data.timeline[0].timestamp;index=0;clearError();$('empty').classList.add('hidden');$('workspace').classList.remove('hidden');
+ text('recording',data.run.recording_id);text('source',data.run.source_kind==='synthetic'?'模拟数据':'实测数据');$('source').className='badge'+(data.run.source_kind==='synthetic'?' warn':'');text('ended',data.run.session_complete?'文件结束：无未结束会话':'文件结束：会话未完成');
+ $('scrub').min=clock;$('scrub').max=data.run.end_timestamp;text('duration',data.run.end_timestamp.toFixed(1));text('startTime',clock.toFixed(1)+' s');text('endTime',data.run.end_timestamp.toFixed(1)+' s');
+ text('algorithm',data.run.algorithm_version||'—');text('parameters',data.run.parameter_version||'—');text('alignment',data.run.raw_alignment_checked?'已检查 NPZ 与结果对齐':'本次未检查 NPZ 对齐');text('eventCount',data.events.length+' 条事件');
+ const body=$('events');body.replaceChildren();data.events.forEach(e=>{let tr=document.createElement('tr');tr.tabIndex=0;for(const value of [e.timestamp.toFixed(1),eventNames[e.event_type],e.from_state||e.to_state?[label(e.from_state),label(e.to_state)].join(' → '):'—',e.reason]){let td=document.createElement('td');td.textContent=value;tr.append(td)}tr.onclick=()=>{pause();seek(e.timestamp)};tr.onkeydown=k=>{if(k.key==='Enter'){pause();seek(e.timestamp)}};body.append(tr)});
+ const track=$('track');track.replaceChildren();let groups=[];for(let i=0;i<data.timeline.length-1;i++){const r=data.timeline[i],span=data.timeline[i+1].timestamp-r.timestamp;let last=groups.at(-1);if(last&&last.state===r.occupancy_state)last.duration+=span;else groups.push({state:r.occupancy_state,duration:span})}groups.forEach(g=>{let s=document.createElement('div');s.style.flex=String(g.duration);s.style.background=colors[g.state];s.title=label(g.state)+' · '+g.duration.toFixed(1)+' 秒';track.append(s)});seek(clock);
+}
+function seek(t){clock=Math.max(data.timeline[0].timestamp,Math.min(t,data.run.end_timestamp));let lo=0,hi=data.timeline.length-1;while(lo<hi){let mid=Math.ceil((lo+hi)/2);if(data.timeline[mid].timestamp<=clock)lo=mid;else hi=mid-1}index=lo;render()}
+function render(){const r=data.timeline[index];text('time',clock.toFixed(1));$('scrub').value=clock;text('frame','第 '+(index+1)+' / '+data.timeline.length+' 帧');text('occupancy',label(r.occupancy_state));$('occupancy').className='value '+(r.occupancy_pending||r.review_required?'status-warn':'status-good');text('occupancySub',r.review_required?'需人工复核，不计入可用空位':r.occupancy_pending?'待确认，不计入可用空位':'占用证据已确认');text('posture',label(r.posture_state));text('postureSub',r.calibration_status==='valid'?'使用有效个人参考':'尚不能启用个人姿态提醒');text('calibration',label(r.calibration_status));text('reminder',r.reminder_state==='idle'?'未计时':label(r.reminder_state));text('reminderSub',r.reminder_state==='paused'?'证据或标定条件不足':'仅展示已有提醒事件，不播放声音');text('seat',r.seat_id);text('session',r.session_id||'无活动会话');text('elapsed',r.posture_elapsed_s===''?'不适用':Number(r.posture_elapsed_s).toFixed(1)+' 秒');text('remaining',r.release_remaining_s===''?'不适用':Number(r.release_remaining_s).toFixed(1)+' 秒');
+ const arrived=data.events.filter(e=>e.timestamp<=clock),latest=arrived.at(-1);text('noticeTitle',r.review_required?'当前需要人工复核':r.occupancy_pending?'当前证据待确认':latest?eventNames[latest.event_type]:'尚无事件');text('noticeBody',latest?latest.timestamp.toFixed(1)+' 秒 · '+latest.reason:'继续播放，查看占用确认和提醒事件。');
+ [...$('events').children].forEach((tr,i)=>{tr.className=data.events[i].timestamp>clock?'future':latest===data.events[i]?'selected':''});$('next').disabled=!data.events.some(e=>e.timestamp>clock);if(clock>=data.run.end_timestamp)pause();
+}
+function tick(wall){if(!playing)return;const dt=(wall-lastWall)/1000;lastWall=wall;seek(clock+dt*Number($('speed').value));if(playing)animation=requestAnimationFrame(tick)}
+$('play').onclick=()=>{if(playing){pause();return}if(clock>=data.run.end_timestamp)seek(data.timeline[0].timestamp);playing=true;text('play','暂停');lastWall=performance.now();animation=requestAnimationFrame(tick)};
+$('restart').onclick=()=>{pause();seek(data.timeline[0].timestamp)};$('scrub').oninput=()=>{pause();seek(Number($('scrub').value))};$('next').onclick=()=>{pause();const e=data.events.find(e=>e.timestamp>clock);if(e)seek(e.timestamp)};
+$('demo').onclick=()=>{try{load(window.DEMO_DATA)}catch(e){fail(e)}};
+$('files').onchange=async e=>{pause();clearError();try{const files=[...e.target.files],byName=new Map(files.map(f=>[f.name,f]));for(const name of ['timeline.csv','events.csv','run.json'])if(!byName.has(name))throw Error('请同时选择 timeline.csv、events.csv 和 run.json，缺少 '+name);if(files.length!==3)throw Error('请只选择同一次运行的三个输出文件');const [t,v,r]=await Promise.all(['timeline.csv','events.csv','run.json'].map(n=>byName.get(n).text()));load({timeline:csv(t,timelineFields,'timeline.csv'),events:csv(v,eventFields,'events.csv'),run:JSON.parse(r)})}catch(error){fail(error)}finally{e.target.value=''}};
+</script>
+</html>

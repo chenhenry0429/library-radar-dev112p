@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_P01_S01_lifecycle_01",
+  "seat_id": "seat_01",
+  "subject_id": "P01",
+  "session_id": "S01",
+  "source_kind": "synthetic",
+  "capture_start": "2026-11-03T10:00:00+08:00",
+  "timestamp_unit": "s",
+  "timestamp_origin": "recording_start",
+  "data_level": "1dfft",
+  "raw_shape": [
+    151,
+    64
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "range_bin"
+  ],
+  "value_unit": "complex (I+jQ), arbitrary",
+  "nominal_frame_rate_hz": 1,
+  "radar_config": {
+    "synthetic": true,
+    "note": "复数距离谱由 generate_demo.py 合成（seed 20261103）"
+  },
+  "installation": {
+    "seat_region": "seat_01 主 bin 17（区域 bins 14-22，合成安装）"
+  },
+  "capture_notes": "M1-demo 合成数据：静态背景杂波 + 呼吸微动(0.25 Hz) + 动作帧(5/30/41/49/55/64) + 区域外路过干扰(70-74 s)；走同一接口（规范第 4/6 节），真实值由简化 M1 管线产出。"
+}

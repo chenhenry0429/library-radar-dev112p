@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_P01_S01_lifecycle_01",
+  "algorithm_version": "M1-demo-0.1",
+  "parameter_version": "1dc13d76",
+  "capabilities": [
+    "presence",
+    "posture"
+  ],
+  "config": {
+    "pipeline": "region_limit -> background_freeze -> F1(residual_energy) + F2(phase_std) + F3(breath_band_ratio) -> gate -> hysteresis",
+    "region_bins": [
+      14,
+      22
+    ],
+    "main_bin": 17,
+    "weights": {
+      "f1": 0.6,
+      "f2": 0.2,
+      "f3": 0.2
+    },
+    "gate": "mean(F1n, 4s window)",
+    "thresholds": {
+      "on": 0.5,
+      "off": 0.35
+    },
+    "f1_map_db": [
+      -9.0,
+      8.0
+    ],
+    "f2_norm_rad": 0.3,
+    "f3_band_hz": [
+      0.2,
+      0.3
+    ],
+    "background": {
+      "update": "EMA(alpha=0.2) 仅 presence=0 帧",
+      "freeze": "presence=1 冻结",
+      "warmup": {
+        "frames": 4,
+        "conf_cap": 0.8
+      }
+    },
+    "confidence_map": "0.5 + 0.49*|2*score-1|",
+    "posture_note": "lifecycle 演示中 posture 列承载标定生命周期标注（reference/forward），非姿态分类输出",
+    "random_seed": 20261103
+  },
+  "window_s": 4.0,
+  "smoothing": "none",
+  "model_version": null,
+  "calibrations": [
+    {
+      "calibration_id": "cal_01",
+      "seat_id": "seat_01",
+      "start_timestamp": 6.0,
+      "end_timestamp": 16.0,
+      "valid_from_timestamp": 16.0,
+      "invalid_from_timestamp": 42.0,
+      "invalid_reason": "离座"
+    }
+  ]
+}

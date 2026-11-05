@@ -48,6 +48,18 @@ D 独立标注  -> labels.csv -> 评价（不参与 C 推理或 A 状态处理�
 
 当前可执行文件集中保留在根目录，以兼容已交付的离线工具与手册；模块目录用于任务入口和职责边界，不复制四套代码。模块之间通过约定的文件交接，不导入 D 的真值来做推理。
 
+## 参与项目 / Contributors
+
+| 成员 | 负责模块 |
+|---|---|
+| [@chenhenry0429](https://github.com/chenhenry0429) | B：雷达与采集；仓库维护 |
+| [@stone140](https://github.com/stone140) | A：应用与业务；D：独立标注与评价 |
+| [@cy071210](https://github.com/cy071210) | C：识别算法 |
+
+小组成员接受仓库协作者邀请后，可创建分支并提交 Pull Request。其他参与者也可通过 Fork + Pull Request 贡献。加入步骤、成员职责和首次提交方式见 [项目成员](TEAM.md) 与 [协作指南](CONTRIBUTING.md)。
+
+GitHub 侧栏的 **Contributors** 根据实际提交自动统计；成员表用于说明分工，不会直接改变统计或授予权限。提交需要进入默认分支 `main`，且作者邮箱关联本人的 GitHub 账号。查看 [实际贡献记录](https://github.com/chenhenry0429/library-radar-dev112p/graphs/contributors)。
+
 ## 文档
 
 - [7 页操作手册 PDF](docs/operation-manual.pdf)

@@ -1,0 +1,31 @@
+# 项目成员与加入方式
+
+本页记录已确认的小组分工。GitHub 访问权限以仓库协作者设置为准，实际提交贡献以 Contributors 统计为准。
+
+## 成员分工
+
+| GitHub 账号 | 角色 | 主要交付 |
+|---|---|---|
+| [@chenhenry0429](https://github.com/chenhenry0429) | B：雷达与采集；仓库维护 | 设备资料与配置、真实采集接入、原始数据归档与离线交付 |
+| [@stone140](https://github.com/stone140) | A：应用与业务 | 占用会话、离座等待、释放、姿态提醒及展示 |
+| [@stone140](https://github.com/stone140) | D：独立标注与评价 | 标注规则、独立真值、数据集划分与评价程序 |
+| [@cy071210](https://github.com/cy071210) | C：识别算法 | 因果存在/姿态证据、个人标定与算法说明 |
+
+A 与 D 当前由同一成员负责，两部分代码和数据仍保持职责边界：D 的评价标签不能传入 C 推理或 A 的运行状态处理。
+
+## 组员首次参与
+
+1. 使用表格中自己的 GitHub 账号接受仓库邀请：[邀请入口](https://github.com/chenhenry0429/library-radar-dev112p/invitations)。接受前可能仍无法向仓库推送代码。
+2. 克隆项目并阅读自己负责的模块：
+   - A：[modules/a_application](modules/a_application/README.md)
+   - B：[modules/b_acquisition](modules/b_acquisition/README.md)
+   - C：[modules/c_algorithm](modules/c_algorithm/README.md)
+   - D：[modules/d_evaluation](modules/d_evaluation/README.md)
+3. 围绕一项真实任务建立分支，提交 Pull Request。第一项改动可以是确认模块验收条目、补齐实验步骤或修复文档中实际存在的问题。
+4. 让实际改动合并到 `main`，并确保 Git 作者邮箱关联自己的 GitHub 账号，GitHub 才能据提交记录归属贡献。完整步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 后续增加成员
+
+新成员向仓库拥有者提供 GitHub 用户名和拟负责事项；拥有者核对账号后发送协作者邀请，再更新本表。个人仓库的普通协作者具备仓库范围的读写权限，不能把模块名称当作目录权限限制。
+
+成员分工可以在实际协作中调整；更新本页不会自动发送邀请、接受邀请或修改 GitHub 的贡献统计。

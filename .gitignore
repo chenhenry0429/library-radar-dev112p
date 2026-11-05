@@ -15,6 +15,7 @@ Thumbs.db
 *.npz
 !DEMO_ONLY/release_demo/**/*_raw.npz
 /output/
+/outputs/
 /recordings/
 /measurements/
 /private-data/

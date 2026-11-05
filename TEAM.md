@@ -2,6 +2,8 @@
 
 本页记录已确认的小组分工。GitHub 访问权限以仓库协作者设置为准，实际提交贡献以 Contributors 统计为准。
 
+想直接看谁提交了什么，请打开 [成果与待办看板](WORK_STATUS.md)。成员目录采用“角色_账号_职责”命名，里面列出已有文件和下一步任务。
+
 ## 成员分工
 
 | GitHub 账号 | 角色 | 主要交付 |
@@ -17,10 +19,10 @@ A 与 D 当前由同一成员负责，两部分代码和数据仍保持职责边
 
 1. 使用表格中自己的 GitHub 账号接受仓库邀请：[邀请入口](https://github.com/chenhenry0429/library-radar-dev112p/invitations)。接受前可能仍无法向仓库推送代码。
 2. 克隆项目并阅读自己负责的模块：
-   - A：[modules/a_application](modules/a_application/README.md)
-   - B：[modules/b_acquisition](modules/b_acquisition/README.md)
-   - C：[modules/c_algorithm](modules/c_algorithm/README.md)
-   - D：[modules/d_evaluation](modules/d_evaluation/README.md)
+   - A：[A_stone140_应用与业务](A_stone140_应用与业务/README.md)
+   - B：[B_chenhenry0429_雷达与采集](B_chenhenry0429_雷达与采集/README.md)
+   - C：[C_cy071210_识别算法](C_cy071210_识别算法/README.md)
+   - D：[D_stone140_标注与评价](D_stone140_标注与评价/README.md)
 3. 围绕一项真实任务建立分支，提交 Pull Request。第一项改动可以是确认模块验收条目、补齐实验步骤或修复文档中实际存在的问题。
 4. 让实际改动合并到 `main`，并确保 Git 作者邮箱关联自己的 GitHub 账号，GitHub 才能据提交记录归属贡献。完整步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

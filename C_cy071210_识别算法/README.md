@@ -1,11 +1,45 @@
-# C · 识别算法
+# C · cy071210 · 识别算法
 
-**当前状态**：只包含共享契约与 synthetic 演示证据，尚无真实存在/姿态分类器。请不要把 synthetic_algorithm 或 evidence 函数作为已训练模型。
+负责人：[@cy071210](https://github.com/cy071210) · [全组成果看板](../WORK_STATUS.md)
 
-输入：B 的 raw.npz + meta.json；先核实数据级别与阵列/轴/单位，不预设 raw 是二维、ADC、点云或距离谱。
+## 已提交的成果
 
-输出：result.csv + algorithm.json，保持原始 N 帧到 N 行逐行对应；无效、预热、拒识也留行，未知字段按约定填写。
+| 成果 | 文件 |
+|---|---|
+| B0 / M1 处理方案 | [B0_M1流程草图_v0.3.md](docs/B0_M1流程草图_v0.3.md) |
+| 官方处理链与数据通路梳理 | [官方信号处理链梳理_v0.2.md](docs/官方信号处理链梳理_v0.2.md) |
+| 给 B 的数据层级需求 | [数据层级需求清单_v0.3.md](docs/数据层级需求清单_v0.3.md) |
+| M1 合成输入演示脚本 | [generate_demo.py](generate_demo.py) |
+| C→A 演示交付文件 | [20261103_P01_S01_lifecycle_01](../DEMO_ONLY/release_demo/20261103_P01_S01_lifecycle_01/) |
 
-下一项任务：用真实空场/静坐样本先完成因果存在证据；之后比较明确指定个人参考下的 reference/forward/backward。没有姿态功能时声明 capabilities.posture=false，仍输出九列，姿态为 unknown/not_applicable、标定 uncalibrated。
+这些成果已通过原有 [PR #2](https://github.com/chenhenry0429/library-radar-dev112p/pull/2) 及后续上传进入 main。迁移保留原提交历史；模拟数据仍统一放在公共 DEMO_ONLY，不在多个成员目录重复归档。
 
-验收：validate --stage c 通过，字段与能力一致；无未来帧或测试标签参与推理；报告窗口、平滑、模型/参数版本及参考起止、生效、失效。A 承担时间累计与提醒，C 不重复加入业务 10 秒提醒或 60 秒释放。
+演示包目录内随包保存的同名脚本保留为该次演示的快照；后续代码修改以本工作区的 `generate_demo.py` 为维护入口。
+
+## 演示脚本怎么运行
+
+在**仓库根目录**执行：
+
+```powershell
+python C_cy071210_识别算法/generate_demo.py
+```
+
+脚本按当前工作目录将文件写到 `outputs/offline_demo/`。输出目录已被 Git 忽略。该脚本生成合成距离谱并进行 M1 原型处理；它的计算输出不是设备实测数据，姿态与标定仍含演示剧本，不代表完整真实分类器。
+
+公共 `radar_offline.py demo` 是另一套接口/业务夹具，不应与本脚本的算法验证混为一谈。C 的新增示例也尚未被默认 CI 当作完整 v1 交付验收，需单独核对格式和标定记录。
+
+## 输入与输出
+
+输入：B 的 raw.npz 与 meta.json，数据级别、轴、单位等须明确；不预设是二维、ADC、点云或距离谱。
+
+输出：result.csv 与 algorithm.json，严格 N 帧对应 N 行，保持帧号和原始时间，预热、无效和拒识也留行。C 提供证据，A 负责业务计时和提醒。
+
+## 下一步
+
+- [ ] 用适配资料和到货实测核对数据通路、字节格式与实际载荷。
+- [ ] 将原型整理为可对 B 交付目录运行的因果算法入口。
+- [ ] 明确标定记录、质量/未知输出和共享 v1 校验。
+- [ ] 先验证真实静坐存在证据，再验证个人参考下的粗姿态。
+- [ ] 与 D 约定独立评价，分别报告合成与实测结果。
+
+`feat/c-algorithm-outputs` 若还有独立提交，先与最新 main 比较，再决定迁移/合并；本次目录整理没有额外合并该分支。

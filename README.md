@@ -1,12 +1,51 @@
 # 图书馆座位占用与坐姿提醒 · DEV112P
 
-面向面对面六人桌、高隔板自习位的小组项目。目标是逐座位检测占用、管理离座等待，并研究相对个人参考的前倾/后靠提示，逐步扩展至多个座位。
+面向面对面六人桌、高隔板自习位的小组项目，逐步验证多座位占用管理和个人参考下的姿态变化提示。
 
-**当前可运行的是单座位离线接口 v1 和模拟联调流程。** 仓库包含 B 的文件归档/校验、共享接口及 A 的离线状态处理；真实 DEV112P 透传解码、人体存在与姿态分类模型尚未接入。`DEMO_ONLY` 全部为 `synthetic`，不能用于识别准确率评价。
+**当前阶段：传感器待到货；已有单座离线工具、回放页面和合成数据原型。** 仓库中的演示数据为 `synthetic`，不能作为真实雷达识别效果。
+
+## 谁负责什么，已经做了什么
+
+点击带名字的目录，直接查看该成员的成果、运行入口和下一步任务。
+
+| 负责人 | 工作目录 | 已进入 main 的成果 | 下一步 |
+|---|---|---|---|
+| [stone140](https://github.com/stone140) · A | [A_stone140_应用与业务](A_stone140_应用与业务/README.md) | 离线回放网页、内置演示和使用说明；可使用已有公共状态处理工具 | 前后端联调和边界场景核对 |
+| [chenhenry0429](https://github.com/chenhenry0429) · B | [B_chenhenry0429_雷达与采集](B_chenhenry0429_雷达与采集/README.md) | 已解码数组归档、文件校验、离线打包和读取工具 | 设备到货验收、真实协议与采集接入 |
+| [cy071210](https://github.com/cy071210) · C | [C_cy071210_识别算法](C_cy071210_识别算法/README.md) | 数据需求、处理流程/信号链文档、M1 合成输入演示脚本及样例 | 真实载荷适配和独立数据验证 |
+| [stone140](https://github.com/stone140) · D | [D_stone140_标注与评价](D_stone140_标注与评价/README.md) | 已约定独立标签格式和评价任务；评价程序尚未提交 | 标注细则、标签校验和评价脚本 |
+
+[查看成果与待办看板](WORK_STATUS.md) · [查看成员与加入方式](TEAM.md) · [查看实际提交贡献](https://github.com/chenhenry0429/library-radar-dev112p/graphs/contributors)
+
+## 目录导航
+
+```text
+A_stone140_应用与业务/
+  README.md                       A 的成果与任务
+  offline_viewer/                  回放网页、内置数据、使用说明
+B_chenhenry0429_雷达与采集/
+  README.md                       B 的工具索引、到货前后任务
+C_cy071210_识别算法/
+  README.md                       C 的成果、运行与验证边界
+  generate_demo.py                M1 合成数据演示脚本
+  docs/                           数据需求、B0/M1、信号链说明
+D_stone140_标注与评价/
+  README.md                       独立标注和评价任务
+shared/                           共享接口入口，字段定义见 contract.py
+docs/                             操作手册、验证与架构文档
+DEMO_ONLY/                        公共模拟数据，按采集编号存放
+modules/                          旧路径兼容入口
+radar_offline.py                  全组统一命令入口
+offline_state_machine.py          公共 A 状态处理基线
+contract.py                      公共字段与严格校验
+selftest.py                      公共回归测试
+```
+
+负责人目录表示模块职责；文件的实际作者和变更历史仍以 Git 提交为准。根目录 Python/Windows 启动入口继续可用，不为每个成员复制一套公共工具。旧路径对应关系见 [目录迁移说明](docs/directory-guide.md)。
 
 ## 先运行一次
 
-建议使用 Python 3.12。锁定依赖为 NumPy 2.3.5，需 Python 3.11+。在仓库根目录打开终端：
+建议 Python 3.12，锁定 NumPy 2.3.5（需 Python 3.11+）。在仓库根目录运行：
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -14,17 +53,11 @@ python selftest.py
 python radar_offline.py demo --output DEMO_ONLY/my_first_demo
 ```
 
-Windows 也可在准备好环境后双击 `run_demo.cmd`，它会为本次演示新建目录并生成离线交付 ZIP。自动启动器保留本机已有环境兼容方式；不自动安装依赖。
+Windows 可在准备好环境后双击 `run_demo.cmd`。本次运行输出位于演示目录内的 `output/<recording_id>/demo_run_01/`，包含 `timeline.csv`、`events.csv` 和 `run.json`；同名输出不会覆盖。
 
-结果在本次演示目录中的 `output/<recording_id>/demo_run_01/`：
+查看回放：下载并完整解压仓库，双击 [A 的 offline_viewer/index.html](A_stone140_应用与业务/offline_viewer/index.html)，点击“载入模拟演示”，或选择同一次 A 运行的三个输出文件。GitHub 文件预览页显示源代码，需下载后打开网页。
 
-- `timeline.csv`：逐帧占用、姿态、计时和复核状态。
-- `events.csv`：入座、离座等待、释放、提醒及数据缺口。
-- `run.json`：本次参数、输入校验值、会话完成情况。
-
-同名输出不会覆盖，请为下一次运行使用新的目录或 `run-id`。
-
-## 小组模块与交接
+## 组间怎么交接
 
 ```text
 B 已解码采集 -> raw.npz + meta.json
@@ -35,49 +68,18 @@ C 因果算法  -> result.csv + algorithm.json
                          v
 A 离线业务  -> timeline.csv + events.csv + run.json
 
-D 独立标注  -> labels.csv -> 评价（不参与 C 推理或 A 状态处理）
+D 独立标注  -> labels.csv -> 评价（不作为 C 推理或 A 状态处理输入）
 ```
 
-| 模块 | 工作入口 | 当前状态 |
-|---|---|---|
-| A 应用与业务 | [modules/a_application](modules/a_application/README.md) | 离线状态处理已实现；网页展示待开发 |
-| B 雷达与采集 | [modules/b_acquisition](modules/b_acquisition/README.md) | 已解码数据归档/校验/交付已实现；硬件协议解析待接入 |
-| C 识别算法 | [modules/c_algorithm](modules/c_algorithm/README.md) | 接口和模拟证据已提供；真实分类器待开发 |
-| D 标注与评价 | [modules/d_evaluation](modules/d_evaluation/README.md) | 标注/评价方案已约定；评价程序待开发 |
-| 共享接口 | [shared](shared/README.md) | 单一字段定义与校验，由跨模块共同维护 |
+共享字段由 [contract.py](contract.py) 和 [shared](shared/README.md) 统一维护。v1 每目录只处理一个座位、一段连续采集；真实多座并发和硬件识别仍需验证。
 
-当前可执行文件集中保留在根目录，以兼容已交付的离线工具与手册；模块目录用于任务入口和职责边界，不复制四套代码。模块之间通过约定的文件交接，不导入 D 的真值来做推理。
-
-## 参与项目 / Contributors
-
-| 成员 | 负责模块 |
-|---|---|
-| [@chenhenry0429](https://github.com/chenhenry0429) | B：雷达与采集；仓库维护 |
-| [@stone140](https://github.com/stone140) | A：应用与业务；D：独立标注与评价 |
-| [@cy071210](https://github.com/cy071210) | C：识别算法 |
-
-小组成员接受仓库协作者邀请后，可创建分支并提交 Pull Request。其他参与者也可通过 Fork + Pull Request 贡献。加入步骤、成员职责和首次提交方式见 [项目成员](TEAM.md) 与 [协作指南](CONTRIBUTING.md)。
-
-GitHub 侧栏的 **Contributors** 根据实际提交自动统计；成员表用于说明分工，不会直接改变统计或授予权限。提交需要进入默认分支 `main`，且作者邮箱关联本人的 GitHub 账号。查看 [实际贡献记录](https://github.com/chenhenry0429/library-radar-dev112p/graphs/contributors)。
-
-## 文档
+## 操作说明与协作
 
 - [7 页操作手册 PDF](docs/operation-manual.pdf)
-- [详细工具说明](README_先读我.md)
-- [离线接收说明](README_组员离线读取.txt)
-- [架构与模块规划](docs/architecture.md)
-- [离线字段与版本约定](shared/README.md)
-- [验证记录](docs/validation-report.md)
-- [小组协作方法](CONTRIBUTING.md)
+- [详细工具说明](README_先读我.md) · [离线接收说明](README_组员离线读取.txt)
+- [架构与阶段规划](docs/architecture.md) · [原有验证记录](docs/validation-report.md)
+- [如何加入、建分支与提交 PR](CONTRIBUTING.md)
 
-## 当前验收与后续目标
+小组成员接受协作者邀请后可创建分支；其他参与者可 Fork 后提交 Pull Request。成员分工与 GitHub Contributors 统计分开，署名和权限说明见 [TEAM.md](TEAM.md)。
 
-本地已有 28 项回归测试，覆盖字段/帧时间对应、占用确认、姿态计时、标定、未知与数据缺口、EOF、确定性及离线 ZIP 校验。GitHub 工作流会在 Windows / Linux 的 Python 3.12 环境再次执行测试；远程结果以 Actions 为准。
-
-后续顺序：取得真实协议并完成单座采集闭环 -> C 实测存在/姿态算法 -> D 独立评价 -> A 展示 -> 相邻两座并发验证 -> 高隔板六人桌与多桌扩展。多座位目标不等于 v1 已支持多人分离或多节点并发。
-
-## 数据与许可证
-
-真实采集、人员标注、设备序列号、订单、授权文件和厂商工具不随源代码发布。仓库只带可复现的模拟例子；模拟运行记录的本机路径已改为相对路径。使用 `recordings/` 等被忽略目录保存本地真实数据。
-
-团队尚未选定开源许可证，暂不自动添加 LICENSE；后续由团队统一确认。
+真实采集、人员标注、设备序列号、订单、授权文件和厂商工具不随源代码发布。模拟示例保留来源标记。团队尚未选定开源许可证，暂不自动添加 LICENSE。

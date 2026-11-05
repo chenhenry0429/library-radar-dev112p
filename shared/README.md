@@ -2,6 +2,8 @@
 
 唯一可执行定义：[contract.py](../contract.py)。B/C/A 不分别复制这份定义。
 
+这是全组共享基础，不归某一成员独占。任务和已有实现的区别见 [成果看板](../WORK_STATUS.md)；修改时同步相关 A/B/C/D 负责人。
+
 - B：timestamps float64[N]、frame_ids int64[N]、raw_data numeric[N,...]；数组按实际载荷保留维度、dtype 和值。meta 记录完整来源、安装、配置、轴和单位。
 - C 固定表头：frame_id,timestamp,presence,presence_confidence,target_count,posture,posture_confidence,calibration_status,quality。
 - 时间是本次采集开始后的非负相对秒，严格递增。C 对应原始时间保持 float64 往返精度，不排序、不填补或删除帧。

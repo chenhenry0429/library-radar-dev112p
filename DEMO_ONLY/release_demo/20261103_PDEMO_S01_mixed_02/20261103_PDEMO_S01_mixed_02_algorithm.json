@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_PDEMO_S01_mixed_02",
+  "algorithm_version": "synthetic-evidence-fixture-1.0",
+  "parameter_version": "demo-1",
+  "capabilities": {
+    "presence": true,
+    "posture": true
+  },
+  "config": {
+    "source": "scripted synthetic evidence, NOT inferred from raw_data",
+    "causal_fixture": true
+  },
+  "thresholds": {},
+  "window_s": 0.0,
+  "temporal_smoothing": "none; scripted per-frame evidence",
+  "model_version": null,
+  "calibrations": []
+}

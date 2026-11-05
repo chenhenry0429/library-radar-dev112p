@@ -1,0 +1,14 @@
+{
+  "presence_confirm_s": 2.0,
+  "absence_confirm_s": 3.0,
+  "release_wait_s": 60.0,
+  "posture_confirm_s": 2.0,
+  "remind_after_s": 10.0,
+  "reference_reset_s": 3.0,
+  "unknown_clear_s": 3.0,
+  "cooldown_s": 60.0,
+  "review_after_s": 30.0,
+  "data_gap_s": 0.5,
+  "presence_confidence_min": null,
+  "posture_confidence_min": null
+}

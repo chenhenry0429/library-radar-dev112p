@@ -1,0 +1,29 @@
+timestamp,frame_id,seat_id,session_id,event_type,from_state,to_state,reason
+3.0,30,SEAT01,,occupancy_change,unknown,idle,continuous valid absence confirmed
+6.0,60,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,calibration_required,,uncalibrated,new confirmed seat session; reference must be acquired after this timestamp
+6.0,60,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,occupancy_change,idle,in_use,continuous valid presence confirmed
+6.0,60,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,not_applicable,unknown,posture/occupancy evidence unavailable or current personal reference invalid
+20.0,200,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,forward,stable posture confirmed
+30.0,300,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,reminder,accumulating,reminded,forward: confirmed posture duration reached remind_after_s; no audio
+34.0,340,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,forward,unknown,posture/occupancy evidence unavailable or current personal reference invalid
+37.0,370,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,forward,stable posture confirmed
+38.0,380,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,forward,unknown,waiting for stable posture evidence
+41.0,410,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,reference,stable posture confirmed
+42.0,420,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,reference,unknown,waiting for stable posture evidence
+44.0,440,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,backward,stable posture confirmed
+58.0,580,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,backward,unknown,posture/occupancy evidence unavailable or current personal reference invalid
+61.0,610,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,occupancy_change,in_use,leave_wait,continuous valid absence confirmed; waiting starts now
+61.0,610,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,not_applicable,seat is not in_use
+67.0,670,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,occupancy_change,leave_wait,in_use,presence reconfirmed; same seat session resumed
+67.0,670,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,calibration_required,,uncalibrated,return after leave_wait; acquire a new personal reference
+67.0,670,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,not_applicable,unknown,posture/occupancy evidence unavailable or current personal reference invalid
+85.0,850,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,forward,stable posture confirmed
+95.0,950,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,reminder,accumulating,reminded,forward: confirmed posture duration reached remind_after_s; no audio
+110.0,1040,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,data_gap,in_use,in_use,gap 6.099999999999994s exceeds 0.5s; entire interval excluded
+110.0,1040,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,forward,unknown,posture/occupancy evidence unavailable or current personal reference invalid
+118.0,1120,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,occupancy_change,in_use,leave_wait,continuous valid absence confirmed; waiting starts now
+118.0,1120,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,posture_change,unknown,not_applicable,seat is not in_use
+178.0,1720,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0001,occupancy_change,leave_wait,released,accumulated valid absence waiting reached release_wait_s
+187.0,1810,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0002,calibration_required,,uncalibrated,new confirmed seat session; reference must be acquired after this timestamp
+187.0,1810,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0002,occupancy_change,released,in_use,continuous valid presence confirmed
+187.0,1810,SEAT01,20261103_PDEMO_S01_lifecycle_01-seat-0002,posture_change,not_applicable,unknown,posture/occupancy evidence unavailable or current personal reference invalid

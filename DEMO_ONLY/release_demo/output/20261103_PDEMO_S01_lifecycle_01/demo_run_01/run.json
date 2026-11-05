@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_PDEMO_S01_lifecycle_01",
+  "run_id": "demo_run_01",
+  "source_kind": "synthetic",
+  "program_version": "offline-A-1.0.0",
+  "created_at": "2026-11-03T03:03:29.906665+00:00",
+  "algorithm_version": "synthetic-evidence-fixture-1.0",
+  "inputs": {
+    "result": {
+      "path": "20261103_PDEMO_S01_lifecycle_01/20261103_PDEMO_S01_lifecycle_01_result.csv",
+      "sha256": "8ad5e28b1836444806b8bd2ba3c98ef004e3e4996175c38b3880bf80cd42078d"
+    },
+    "meta": {
+      "path": "20261103_PDEMO_S01_lifecycle_01/20261103_PDEMO_S01_lifecycle_01_meta.json",
+      "sha256": "fcac870abd38091ef889e6e3715aacbd47d9cdf5734e08a5e8cef86540de7791"
+    },
+    "algorithm": {
+      "path": "20261103_PDEMO_S01_lifecycle_01/20261103_PDEMO_S01_lifecycle_01_algorithm.json",
+      "sha256": "5a5f4a5cdd74b98e9283001f655b629b961c8167bf8bb2fbe607b3874c65bed9"
+    },
+    "config": {
+      "path": "demo_config.json",
+      "sha256": "b46fa420b0aa5e58841af72c6b323e85be9edbced10421e9edb3a53368bbe837"
+    }
+  },
+  "validation_raw": {
+    "path": "20261103_PDEMO_S01_lifecycle_01/20261103_PDEMO_S01_lifecycle_01_raw.npz",
+    "sha256": "072909babf08d0ebae3925254b22c1df0a2568804cd4259ecd6f7a690acc64cd",
+    "use": "alignment validation only"
+  },
+  "parameters": {
+    "presence_confirm_s": 2.0,
+    "absence_confirm_s": 3.0,
+    "release_wait_s": 60.0,
+    "posture_confirm_s": 2.0,
+    "remind_after_s": 10.0,
+    "reference_reset_s": 3.0,
+    "unknown_clear_s": 3.0,
+    "cooldown_s": 60.0,
+    "review_after_s": 30.0,
+    "data_gap_s": 0.5,
+    "presence_confidence_min": null,
+    "posture_confidence_min": null
+  },
+  "end_timestamp": 194.0,
+  "sessions": [
+    {
+      "session_id": "20261103_PDEMO_S01_lifecycle_01-seat-0001",
+      "start_timestamp": 6.0,
+      "end_timestamp": 178.0,
+      "complete": true
+    },
+    {
+      "session_id": "20261103_PDEMO_S01_lifecycle_01-seat-0002",
+      "start_timestamp": 187.0,
+      "end_timestamp": null,
+      "complete": false
+    }
+  ],
+  "session_complete": false,
+  "eof_policy": "stop; do not advance data time",
+  "calibration_policy": "new reference.start_timestamp >= confirmed entry/return timestamp",
+  "free_at_eof": false,
+  "published_example_note": "Synthetic example. Input paths are relative to DEMO_ONLY/release_demo; hashes and business outputs are unchanged."
+}

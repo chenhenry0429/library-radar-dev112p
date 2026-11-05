@@ -1,0 +1,6 @@
+frame_id,timestamp,presence,presence_confidence,target_count,posture,posture_confidence,calibration_status,quality
+0,0.0,-1,,-1,unknown,,uncalibrated,low_signal
+1,0.1,0,0.95,0,not_applicable,,uncalibrated,ok
+2,0.2,1,0.92,1,unknown,,uncalibrated,ok
+3,0.3,1,0.93,1,unknown,,calibrating,ok
+4,0.4,-1,,-1,unknown,,invalid,invalid_frame

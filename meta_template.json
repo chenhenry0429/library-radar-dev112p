@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_P01_S01_sit_01",
+  "seat_id": "SEAT01",
+  "subject_id": "P01",
+  "session_id": "S01",
+  "source_kind": "measured",
+  "capture_start": null,
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": null,
+  "data_level": null,
+  "raw_shape": null,
+  "raw_dtype": null,
+  "axis_order": null,
+  "value_unit": null,
+  "iq_representation": null,
+  "nominal_frame_rate_hz": null,
+  "radar_config": {
+    "model": "DEV112P",
+    "firmware_version": null,
+    "channel_mapping": null,
+    "sample_rate_hz": null,
+    "sweep_config": null,
+    "firmware_filter": null
+  },
+  "installation": {
+    "location": null,
+    "height_m": null,
+    "angle_deg": null,
+    "roi_definition": null
+  },
+  "capture_notes": "模板未完成，不能作为正式交付。等待实际协议和安装信息后填写；不得把未知透传字节称作ADC。"
+}

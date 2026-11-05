@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261103_PDEMO_S01_lifecycle_01",
+  "seat_id": "SEAT01",
+  "subject_id": "PDEMO",
+  "session_id": "S01",
+  "source_kind": "synthetic",
+  "capture_start": "2026-11-03T10:00:00+08:00",
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": "synthetic fixture clock",
+  "data_level": "synthetic_numeric_fixture_not_radar",
+  "raw_shape": [
+    1881,
+    2,
+    16
+  ],
+  "raw_dtype": "float32",
+  "axis_order": [
+    "frame",
+    "synthetic_channel",
+    "synthetic_bin"
+  ],
+  "value_unit": "arbitrary_fixture_unit",
+  "iq_representation": "real synthetic values; not measured ADC/IQ",
+  "nominal_frame_rate_hz": 10.0,
+  "radar_config": {
+    "model": "DEV112P",
+    "firmware_version": null,
+    "channel_mapping": null,
+    "sample_rate_hz": null,
+    "sweep_config": null,
+    "firmware_filter": null
+  },
+  "installation": {
+    "location": "synthetic single-seat fixture",
+    "height_m": null,
+    "angle_deg": null,
+    "roi_definition": "synthetic target seat only; no physical installation"
+  },
+  "capture_notes": "DEMO ONLY. Synthetic arrays and evidence are independently scripted. No acquisition, decoding, trained classifier, posture accuracy, or real calibration is demonstrated."
+}

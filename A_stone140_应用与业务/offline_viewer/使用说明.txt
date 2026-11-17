@@ -3,13 +3,10 @@
 1. 双击本目录的 index.html，用 Edge 或 Chrome 打开。
 2. 点击“载入模拟演示”，即可播放、暂停、拖动时间条或跳到下一事件。
 3. 要查看自己的运行结果，点击“选择结果文件”。
-4. 进入你这次 A 运行的输出目录，按住 Ctrl 同时选择：
+4. 进入 output/offline/采集编号/运行编号/，按住 Ctrl 同时选择：
    timeline.csv、events.csv、run.json，点击打开。
 
-不要选择 C 的 _result.csv：它需要先用根目录 radar_offline.py 的 run-a 命令生成 A 的三个输出文件。
-例如在仓库根目录运行（同名 run-id 已存在时请换一个新编号）：
-python radar_offline.py run-a DEMO_ONLY/release_demo/20261103_PDEMO_S01_lifecycle_01 --config DEMO_ONLY/release_demo/demo_config.json --output output --run-id viewer_check_01
-对应输出：output/20261103_PDEMO_S01_lifecycle_01/viewer_check_01/。
+不要选择 C 的 _result.csv：它需要先用 offline_pipeline.py 生成 A 的三个输出文件。
 页面不重新运行算法，不上传文件，不播放提示音；倍速仅改变显示速度。
 浅色事件行表示尚未播放到的事件，点击行可以直接跳到该时刻。
 文件结束时停止播放，不补出离座或释放事件。
@@ -19,3 +16,18 @@ index.html 与 demo-data.js 须保存在同一目录，内置模拟演示才能�
 请始终选择同一目录的三个文件；页面不进行输入文件 SHA-256 的再验证。
 
 此版本为本地离线页面，无需安装前端依赖或启动服务器。
+
+2026-11-17 展示与验收更新
+
+刷新页面（Ctrl+F5），座位概览将显示单座位状态及该记录时刻可用数量。
+“待确认”“人工复核”或数据缺口不会计入可用空位。页面不能判断设备此刻是否在线。
+“异常与能力提示”区显示当前问题，展开异常历史可跳转到待确认、缺口或复核时刻。
+“下一异常”用于逐项检查；事件表支持全部、仅异常、仅提醒筛选。
+验收场景按钮可载入：正常占用与提醒、未知/复核/数据缺口、等待中结束文件。
+缺口中的状态为上一帧确认状态，计时冻结；文件结束后不自动释放。
+新运行记录若仅声明 presence 能力，页面显示姿态能力未提供、提醒未启用。
+名义时间、离线基线来源、已知问题及运行参数会保留展示。
+新增 acceptance-data.js 和 seat-display.js 须与 index.html 放在同一目录。
+
+自动验收结果位于项目 output/acceptance/页面逐项验收.md。
+轻量 DOM 自动检查不能替代 Edge/Chrome 的字体、布局和文件选择交互人工验收。

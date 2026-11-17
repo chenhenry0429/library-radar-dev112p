@@ -37,3 +37,14 @@ python radar_offline.py run-a DEMO_ONLY/release_demo/20261103_PDEMO_S01_lifecycl
 - [ ] 在真实多座接口确定后，再做多座位展示；目前页面按单座运行结果读取。
 
 与 D 的协作：虽然由同一人负责，D 的评价标签仍不能进入 A 的业务运行逻辑。
+
+## 当前页面版本：v0.2.0（2026-11-17）
+
+新增座位概览、可用统计、异常提示与历史、筛选和三组验收场景；占用参数不变。保留根目录共享状态机和旧 run.json 兼容。
+
+- [版本记录](offline_viewer/CHANGELOG.md) · [逐项验收](docs/v0.2.0_页面逐项验收.md) · [固定参数快照](docs/v0.2.0_固定参数快照.json)
+- 完整下载仓库后打开 offline_viewer/index.html；相邻 JS 文件须保持完整，页面底部显示 v0.2.0。
+- Node.js 18+：在本目录运行 `node offline_viewer/test-acceptance.cjs`。18 项显示逻辑断言可在其他电脑独立运行，结果写入 offline_viewer/test-results/。
+- fixtures/v02 是 C d3370f4 占用基线派生的 A 输出，用于解析/显示检查，不是独立真值，也不是实时 M1 或坐姿验收。
+- 本次测试中的后端 18 项是 A 本地回归证据，后端代码不随页面发布；不要据此声称仓库根目录共享状态机已由这些测试完整验证。
+- 合成异常显示已自动检查；浏览器视觉、真实文件选择器、断连、离座和干扰实测仍待验收。

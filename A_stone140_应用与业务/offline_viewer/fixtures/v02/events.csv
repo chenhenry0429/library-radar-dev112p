@@ -1,0 +1,4 @@
+timestamp,frame_id,seat_id,session_id,event_type,from_state,to_state,reason
+3.096,16,T01,,occupancy_change,unknown,idle,初始有效无人持续确认
+21.8655,113,T01,20261112_T01_P01_R01_c1r0_1dfft:S001,occupancy_change,idle,in_use,有效存在持续确认
+21.8655,113,T01,20261112_T01_P01_R01_c1r0_1dfft:S001,calibration_required,,,本座位会话需有效个人参考

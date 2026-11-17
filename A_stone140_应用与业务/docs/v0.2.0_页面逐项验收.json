@@ -1,0 +1,131 @@
+{
+  "test_type": "display_logic_not_browser_visual",
+  "results": [
+    {
+      "id": "A01",
+      "scenario": "初始未知",
+      "expected": "可用为 0，待确认为 1",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A02",
+      "scenario": "确认空闲",
+      "expected": "可用为 1",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A03",
+      "scenario": "已入座",
+      "expected": "可用为 0，显示座位与未标定提示",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A04",
+      "scenario": "持续姿态",
+      "expected": "输出累计 10 秒且只展示已有提醒",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A05",
+      "scenario": "离座等待",
+      "expected": "等待剩余 60 秒，不计可用",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A06",
+      "scenario": "等待中返回",
+      "expected": "保持使用中，重新标定提示",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A07",
+      "scenario": "确认释放",
+      "expected": "可用为 1、无活动会话",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A08",
+      "scenario": "低置信证据",
+      "expected": "保留使用中、待确认、不可用",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A09",
+      "scenario": "持续未知",
+      "expected": "人工复核提示，不释放",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A10",
+      "scenario": "恢复确认",
+      "expected": "清除当前复核提示、保留异常历史",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A11",
+      "scenario": "两帧之间的数据缺口",
+      "expected": "显示缺口、暂停、不假定断连",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A12",
+      "scenario": "缺口后的记录",
+      "expected": "回放时间 80 秒，缺口事件进入历史",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A13",
+      "scenario": "下一异常导航",
+      "expected": "跳到 15 秒占用待确认",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A14",
+      "scenario": "事件筛选",
+      "expected": "仅显示事件文件中的缺口或复核",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A15",
+      "scenario": "等待中 EOF",
+      "expected": "保留等待及剩余 51 秒、不补齐释放",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A16",
+      "scenario": "实测基线 v0.2",
+      "expected": "仅占用、姿态未启用、名义时间明确",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A17",
+      "scenario": "实测基线 EOF",
+      "expected": "保持使用中且不可用",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    },
+    {
+      "id": "A18",
+      "scenario": "错误文件导入",
+      "expected": "拒绝错误包、保持旧记录并提示",
+      "status": "通过",
+      "method": "Node.js + 轻量 DOM 断言"
+    }
+  ]
+}

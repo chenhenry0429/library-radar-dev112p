@@ -1,0 +1,34 @@
+{
+  "schema_version": "0.1",
+  "recording_id": "20261117_P00_S06_lifecycle_02_1d",
+  "kind": "synthetic_scenario_script",
+  "note": "simulation ground truth for synthetic self-test only; real-data evaluation uses D's independent labels.csv",
+  "scenario": "lifecycle",
+  "token": "lifecycle",
+  "seed": 10003213945,
+  "level": "1d",
+  "presence_intervals_s": [
+    [
+      10.0,
+      28.0
+    ],
+    [
+      46.0,
+      60.0
+    ]
+  ],
+  "events": [
+    {
+      "t_s": 10.0,
+      "type": "enter"
+    },
+    {
+      "t_s": 28.0,
+      "type": "leave"
+    },
+    {
+      "t_s": 46.0,
+      "type": "reenter"
+    }
+  ]
+}

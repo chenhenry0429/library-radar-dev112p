@@ -214,7 +214,9 @@ def process_recording(npz_path, args, region_params):
         smoothing = (f"dual-threshold hysteresis T_ON={thresholds.get('t_on', 0.5)} "
                      f"T_OFF={thresholds.get('t_off', 0.35)}, confirm_frames="
                      f"{(cfg or {}).get('hysteresis_confirm_frames', 1)}")
-        algorithm_version, model_version = "M1 v1.1", "M1-v1.1"
+        # 版本标签可由 config 覆盖（默认保持 v1.1；v1.2 snapshot 配置需正确标识）
+        algorithm_version = str((cfg or {}).get("algorithm_version", "M1 v1.1"))
+        model_version = str((cfg or {}).get("model_version", "M1-v1.1"))
     elif algorithm == "B0":
         if not has_doppler:
             raise ValueError("B0 requires a doppler axis (2dfft); use --algorithm M1 for 1dfft input")

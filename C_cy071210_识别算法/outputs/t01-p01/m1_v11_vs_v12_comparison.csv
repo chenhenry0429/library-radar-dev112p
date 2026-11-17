@@ -1,0 +1,13 @@
+metric,v1.1 (ema alpha=0.02),v1.2 (snapshot_freeze)
+empty-phase false positives,81/102 (79%),0/102 (0%)
+first empty-phase FP timestamp (s),4.0635,none
+occupied-phase FN frames,0/738 (state carried from empty FP),23/738 (all pre-confirm settling frames 19.7-24.2 s)
+first presence=1 in occupied phase (s),"19.737000000000002 (carry-over, not a detection)",24.1875
+confirm delay after physical entry edge 19.737 s,n/a (already 1 from empty FP),+4.45 s
+false releases during occupancy,0,0
+occupancy hold ratio (post-confirm),n/a,715/715 (100.0%)
+final state,1,1
+
+"context (A-side program 1.0.1 replay, independent implementation)",confirmed initial empty at 3.096 s; confirmed seating at 21.8655 s,
+context (v1.2 threshold crossing),,first sustained 6-frame F1 crossing at 23.2 s; presence flip at 24.19 s
+config,config/M1_dev112p_v0.1.json,config/M1_dev112p_v0.2.json

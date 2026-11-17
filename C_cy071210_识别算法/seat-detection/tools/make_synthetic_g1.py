@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """G1 合成自测数据生成器（5 场景 × 2 段 × 2 层级）。
+额外：--lifecycle 仅生成 S06 lifecycle 场景（入座→离座→回座，用于 v1.2
+snapshot_freeze 释放/重建/回座路径自测；不进 G1 20 条基线）。
 
 场景规格（docs/seat-detection-design-v0.1.md §6）：
   S01 empty / S02 bag(interfere) / S03 sitting_reading(sit) / S04 sitting_still(sit) / S05 passby(walk)
@@ -33,6 +35,7 @@ PREFIX_S = 10          # 统一空位前缀
 BREATH_HZ = 0.25
 PAGE_FLIP_T = (20, 35, 47)
 PASSBY_T = (10, 16)    # 闭区间帧
+LIFECYCLE_T = (10, 28, 46)  # lifecycle：入座/离座/回座（秒，区间左闭右开）
 SEED_BASE = 20261117
 DATE = "20261117"
 
@@ -43,6 +46,9 @@ SCENARIOS = [
     ("S04", "sitting_still", "sit"),
     ("S05", "passby", "walk"),
 ]
+
+# lifecycle（离座释放回座）自测场景：仅 --lifecycle 显式生成，不进 G1 20 条基线
+LIFECYCLE = [("S06", "lifecycle", "lifecycle")]
 
 
 def frame_components(name, t, rng, phi_b):
@@ -74,6 +80,10 @@ def frame_components(name, t, rng, phi_b):
         if PASSBY_T[0] <= t <= PASSBY_T[1]:
             b = int(round(5.0 + 35.0 * (t - PASSBY_T[0]) / 6.0))  # 扫 bins 5→40
             comps.append((5.0, 0.7 * (t - PASSBY_T[0]), 5, b))     # doppler bin 5
+    elif name == "lifecycle":
+        if LIFECYCLE_T[0] <= t < LIFECYCLE_T[1] or LIFECYCLE_T[2] <= t:
+            s = 2.0 * np.pi * BREATH_HZ * (t - PREFIX_S)
+            comps.append((3.0, 0.6 * np.sin(s), 0, MAIN))       # 静坐微动（同 sitting_still）
     # empty：无目标分量
     return comps
 
@@ -93,6 +103,12 @@ def scenario_script(name, token, seed, level, rid):
         intervals = []   # 旁人经过不占座：真值为无人
         events = [{"t_s": float(PASSBY_T[0]), "type": "passby",
                    "until_s": float(PASSBY_T[1])}]
+    elif name == "lifecycle":
+        intervals = [[float(LIFECYCLE_T[0]), float(LIFECYCLE_T[1])],
+                     [float(LIFECYCLE_T[2]), float(N)]]
+        events = [{"t_s": float(LIFECYCLE_T[0]), "type": "enter"},
+                  {"t_s": float(LIFECYCLE_T[1]), "type": "leave"},
+                  {"t_s": float(LIFECYCLE_T[2]), "type": "reenter"}]
     else:  # empty
         intervals, events = [], []
     return {
@@ -203,11 +219,13 @@ def main():
     ap = argparse.ArgumentParser(description="G1 synthetic self-test data generator")
     ap.add_argument("--out", default=os.path.join(root, "examples", "recordings"))
     ap.add_argument("--segments", type=int, default=2)
+    ap.add_argument("--lifecycle", action="store_true",
+                    help="generate only the S06 lifecycle (leave-release-return) scenario")
     a = ap.parse_args()
 
     os.makedirs(a.out, exist_ok=True)
     count = 0
-    for slot, name, token in SCENARIOS:
+    for slot, name, token in (LIFECYCLE if a.lifecycle else SCENARIOS):
         for seg in range(1, a.segments + 1):
             for level in ("1d", "2d"):
                 rid, seed = build_recording(slot, name, token, seg, level, a.out)

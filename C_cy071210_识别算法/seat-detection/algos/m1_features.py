@@ -20,6 +20,16 @@
   * 静态门 static_gate.f23_floor（默认 0.10）：有人态下 4 s 窗 (F2n+F3n) 均值低于
     地板 → 强制释放 presence（依赖呼吸微动作为持续占用的证据；覆盖"离座留物"
     锁死路径——人走包留时冻结背景会把 F1n 钉在 1.0）
+  * 背景 background.mode（v1.2 新增，默认 "ema" 保持 v1.1 行为不变）：
+    - "ema"：v1.1 原逻辑（无人帧 EMA 更新）
+    - "snapshot_freeze"：入座前累积运行均值为空座快照，检测到占用（presence=1）
+      立即冻结（累积不满 snapshot_frames 时用 K_eff 部分窗口）；释放后累计
+      re_snapshot_confirm 个「证据级空帧」（score ≤ t_off）→ 自动重建快照。
+      累积期只吸收证据级空帧（score ≤ t_off）——回座未确认的人帧不入快照；
+      hysteresis 波峰帧既不计数也不重置，入座未确认段不会误触发重建。
+      动机（T01/P01 实测 §4）：EMA 吸收入座者（α=0.2 → 静坐 72 s 才触发）
+      或滞后漂移（α=0.02 → 空座全程 FP）；冻结快照使空座残差与有人残差在
+      bin1/bin3 组合上间隔 ≥3.4 dB。前提：录制开始时座位为空（或含空座引导段）
 """
 import numpy as np
 
@@ -37,7 +47,8 @@ _DEFAULTS = {
     "f3_gain": 1.5,
     "f3_denominator": "total",   # 'non_static': 排除 DC bin（真实设备动静比 60+ dB 时用）
     "f4_jump_db": 12.0,
-    "background": {"alpha": 0.2},
+    "background": {"alpha": 0.2, "mode": "ema",
+                   "snapshot_frames": 50, "re_snapshot_confirm": 90},
     "confidence": {"warmup_cap": 0.80},
     "hysteresis_confirm_frames": 5,
     "static_gate": {"f23_floor": 0.10},
@@ -140,7 +151,17 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
     if f3_denom not in ("total", "non_static"):
         raise ValueError(f"f3_denominator must be 'total' or 'non_static', got {f3_denom!r}")
     f4_jump = float(_cfg_get(cfg, ["f4_jump_db"], _DEFAULTS["f4_jump_db"]))
+    f1_bins = str(_cfg_get(cfg, ["f1_bins"], "region"))
+    if f1_bins not in ("region", "non_main"):
+        raise ValueError(f"f1_bins must be 'region' or 'non_main', got {f1_bins!r}")
     alpha = float(_cfg_get(cfg, ["background", "alpha"], _DEFAULTS["background"]["alpha"]))
+    bg_mode = str(_cfg_get(cfg, ["background", "mode"], _DEFAULTS["background"]["mode"]))
+    if bg_mode not in ("ema", "snapshot_freeze"):
+        raise ValueError(f"background.mode must be 'ema' or 'snapshot_freeze', got {bg_mode!r}")
+    snap_frames = max(1, int(_cfg_get(cfg, ["background", "snapshot_frames"],
+                                      _DEFAULTS["background"]["snapshot_frames"])))
+    re_snap_confirm = max(1, int(_cfg_get(cfg, ["background", "re_snapshot_confirm"],
+                                          _DEFAULTS["background"]["re_snapshot_confirm"])))
     warmup_cap = float(_cfg_get(cfg, ["confidence", "warmup_cap"], _DEFAULTS["confidence"]["warmup_cap"]))
     confirm = max(1, int(_cfg_get(cfg, ["hysteresis_confirm_frames"],
                                  _DEFAULTS["hysteresis_confirm_frames"])))
@@ -182,6 +203,12 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
     f23_win = np.zeros(n)
 
     bg = X[0].astype(np.complex128 if complex_input else np.float64).copy()
+    # snapshot_freeze 状态（v1.2）：累积器/计数/冻结标志/连续无人帧
+    snap_acc = np.zeros(nb, dtype=np.complex128 if complex_input else np.float64)
+    snap_cnt = 0
+    snap_frozen = False
+    snap_events = 0
+    empty_run = 0
     state, cand, cand_state = 0, 0, 0
     lo_gate = lo_f2 = lo_f3 = 0
     prev_f1_db = None
@@ -223,7 +250,14 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
                 main_locked = True
 
         # ---- F1：区域残差能量（背景去除后） ----
-        resid = reg.astype(np.complex128) - bg[lo_r:hi_r + 1].astype(np.complex128)
+        resid_full = reg.astype(np.complex128) - bg[lo_r:hi_r + 1].astype(np.complex128)
+        if f1_bins == "non_main" and main_locked:
+            # v1.2 真机模式：排除主 bin——空座环境低频相位扰动集中于主 bin，
+            # 人体静态反射分布在侧 bin（T01/P01 probe2/3 实测：主 bin 空座/有人
+            # 分布重叠，侧 bin max(b1,b3) 间隔 ≥3.4 dB）。主 bin 仍由 F2/F3 监测。
+            resid = np.delete(resid_full, main_bin - lo_r)
+        else:
+            resid = resid_full
         f1 = float(np.sum(np.abs(resid) ** 2))
         f1_db = 10.0 * np.log10(f1 + 1e-12)
         f1n[t] = np.clip((f1_db - f1_lo) / (f1_hi - f1_lo), 0.0, 1.0)
@@ -295,10 +329,54 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
             c = min(c, warmup_cap)
         conf[t] = c
 
-        # ---- 背景 EMA：仅无人帧更新（判决之后，因果） ----
-        if state == 0:
-            bg = (1.0 - alpha) * bg + alpha * (Xt.astype(np.complex128)
-                                               if complex_input else Xt.astype(np.float64))
+        # ---- 背景更新：判决之后（因果） ----
+        if bg_mode == "ema":
+            # v1.1 原逻辑：仅无人帧 EMA 更换（保持行为完全不变）
+            if state == 0:
+                bg = (1.0 - alpha) * bg + alpha * (Xt.astype(np.complex128)
+                                                   if complex_input else Xt.astype(np.float64))
+        else:
+            # v1.2 snapshot_freeze：入座前累积空座快照，检测到占用即冻结；
+            # 释放后累计 re_snapshot_confirm 个「证据级空帧」（score ≤ t_off）→ 重建
+            # 快照（漂移/环境变化自适应）。hysteresis 波峰帧（t_off < score < t_on）
+            # 既不计数也不重置——入座未确认段/空座瞬态波峰不会误触发重建。
+            # 累积期（初始或重建）只吸收证据级空帧：回座未确认的人帧（score > t_off）
+            # 不入快照；冻结可发生在任意 K_eff（K_eff=0 表示保留旧快照）。
+            # bg 在累积期为运行均值（随帧收敛），冻结后完全静止。
+            if state == 1:
+                if not snap_frozen:
+                    snap_frozen = True  # 占用确认 → 冻结（部分窗口亦可）
+                    snap_events += 1
+                    if snap_cnt > 0:
+                        warnings.append(f"background: snapshot #{snap_events} frozen "
+                                        f"(K_eff={snap_cnt} frames)")
+                    else:
+                        warnings.append(f"background: snapshot #{snap_events} frozen "
+                                        f"(K_eff=0, previous snapshot kept)")
+                empty_run = 0
+            else:
+                if not snap_frozen:
+                    if s <= t_off:
+                        snap_acc = snap_acc + Xt
+                        snap_cnt += 1
+                        bg = snap_acc / snap_cnt
+                    if snap_cnt >= snap_frames:
+                        snap_frozen = True
+                        snap_events += 1
+                        warnings.append(f"background: snapshot #{snap_events} frozen "
+                                        f"(K_eff={snap_cnt} frames)")
+                else:
+                    if s <= t_off:
+                        empty_run += 1
+                    if empty_run >= re_snap_confirm:
+                        # 释放后证据级空帧足够久 → 重建快照
+                        snap_frozen = False
+                        snap_acc = np.zeros(nb, dtype=np.complex128
+                                            if complex_input else np.float64)
+                        snap_cnt = 0
+                        empty_run = 0
+                        warnings.append(f"background: snapshot #{snap_events} rebuild "
+                                        f"triggered ({re_snap_confirm} empty-evidence frames)")
 
     return {
         "presence": presence,
@@ -311,4 +389,5 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
         "region": region,
         "degraded": degraded,
         "warnings": warnings,
+        "bg_mode": bg_mode,
     }

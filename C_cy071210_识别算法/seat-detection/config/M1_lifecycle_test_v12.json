@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.1",
+  "algorithm": "M1",
+  "description": "M1 v1.2 snapshot_freeze lifecycle self-test config (S06 synthetic, 1 Hz): enter@10s -> leave@28s -> re-enter@46s. Uses M1_default G1-calibrated parameters; background switched to snapshot_freeze with snapshot_frames=8 (completes inside the 10 s empty prefix) and re_snapshot_confirm=12 (rebuild triggers in the 18 s leave gap; returning person frames are skipped by the score guard and the partial snapshot freezes clean on re-confirm). Tests the release + rebuild + partial-freeze-on-return path that T01/P01 cannot (no leave event). NOT for real-device recordings - use M1_dev112p_v0.2.json there.",
+  "algorithm_version": "M1 v1.2 (lifecycle self-test)",
+  "model_version": "M1-v1.2-test",
+  "weights": {
+    "f1_residual": 0.45,
+    "f2_phase_std": 0.30,
+    "f3_breath_band": 0.25,
+    "f4_motion": 0.0
+  },
+  "thresholds": {
+    "t_on": 0.5,
+    "t_off": 0.35
+  },
+  "windows": {
+    "gate_s": 4.0,
+    "f2_s": 4.0,
+    "f3_s": 4.0,
+    "bg_warmup_s": 4.0
+  },
+  "f1_db_map": [-9.0, 8.0],
+  "f2_norm_rad": 0.30,
+  "f3_band_hz": [0.1, 0.5],
+  "f3_gain": 1.5,
+  "f4_jump_db": 12.0,
+  "background": {
+    "mode": "snapshot_freeze",
+    "snapshot_frames": 8,
+    "re_snapshot_confirm": 12
+  },
+  "confidence": {
+    "formula": "clip(0.5 + 0.49*|2*score-1|, 0.5, 0.99)",
+    "warmup_cap": 0.80
+  },
+  "hysteresis_confirm_frames": 5,
+  "static_gate": {
+    "f23_floor": 0.10
+  },
+  "quality": {
+    "low_signal_db": -60.0
+  },
+  "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown"
+}

@@ -51,9 +51,16 @@ F2/F3 判别力弱（空座相位 std 0.024 > 有人 0.012 rad，反转）。
 
 ## 5. 数据驱动基线（当前有人/无人结论的唯一权威）
 
+> **v0.2 修订（A 端反馈）**：handoff 三件套规范化——`capabilities` 改为列表 `["presence"]`；
+> 新增顶层 `window_s=0.1935` / `smoothing="none"`；`config` 结构化；无人帧 posture 由
+> `unknown` 改为 `not_applicable`（102 帧，有人帧仍 `unknown`）；`time_base` 注明时间戳由
+> 名义帧周期推算、未墙钟对齐（待与 B 端采集陈植轩确认）。版本固定
+> **data-driven-baseline v0.2**；用途界定：单次录制占用基线联调，不作 M1/坐姿验收。
+
 [baseline_presence_result.csv](baseline_presence_result.csv)：统一接口 9 列、840 帧连续；
-0–19.737s 无人（102 帧）、19.737–162.47s 有人（738 帧）；posture 全部 `unknown`
-（剧本不可信、M1 不输出姿态）；尾部 156.3s 起置信度降至 0.70（动作性质未知，保守判有人）。
+0–19.737s 无人（102 帧）、19.737–162.47s 有人（738 帧）；posture：有人帧 `unknown`、
+无人帧 `not_applicable`（v0.2；剧本不可信、M1 不输出姿态）；尾部 156.3s 起置信度降至
+0.70（动作性质未知，保守判有人）。
 证据链：§3 功率/呼吸/变化簇。**待 D 独立标注确认后方可升级为评价真值。**
 
 图（[figures/](figures/)，视觉工具不可用，请人工复核）：

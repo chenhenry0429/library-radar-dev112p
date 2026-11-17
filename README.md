@@ -1,85 +1,58 @@
 # 图书馆座位占用与坐姿提醒 · DEV112P
 
-面向面对面六人桌、高隔板自习位的小组项目，逐步验证多座位占用管理和个人参考下的姿态变化提示。
+用毫米波雷达判断图书馆自习座位是否有人、何时离座。项目先在有高隔板的自习桌上验证单个座位，后续再验证相邻座位，并探索坐姿变化提醒。
 
-**当前阶段：传感器待到货；已有单座离线工具、回放页面和合成数据原型。** 仓库中的演示数据为 `synthetic`，不能作为真实雷达识别效果。
+**当前阶段：T01 单座实测与离线回放。** 已采集 **12 段真实录制**。首段 P01 的 **840 帧**已完成解码，基于这段录制整理的占用基线已通过 A 端本地状态机复验。真实占用识别准确率、坐姿和多座并发仍待验证。
 
-## 谁负责什么，已经做了什么
+[下载页面演示](https://github.com/chenhenry0429/library-radar-dev112p/archive/refs/heads/main.zip) · [看真实数据索引](https://github.com/chenhenry0429/library-radar-dev112p/blob/data/dev112p-t01-recordings/datasets/DEV112P_T01_test_data/README.md) · [读 P01 复验记录](对接事宜/2026-11-17_C占用基线v0.2_A端复验.md) · [看进度与分工](WORK_STATUS.md)
 
-点击带名字的目录，直接查看该成员的成果、运行入口和下一步任务。
+## 系统怎么工作
 
-| 负责人 | 工作目录 | 已进入 main 的成果 | 下一步 |
-|---|---|---|---|
-| [stone140](https://github.com/stone140) · A | [A_stone140_应用与业务](A_stone140_应用与业务/README.md) | 离线回放网页、内置演示和使用说明；可使用已有公共状态处理工具 | 前后端联调和边界场景核对 |
-| [chenhenry0429](https://github.com/chenhenry0429) · B | [B_chenhenry0429_雷达与采集](B_chenhenry0429_雷达与采集/README.md) | 已解码数组归档、文件校验、离线打包和读取工具 | 设备到货验收、真实协议与采集接入 |
-| [cy071210](https://github.com/cy071210) · C | [C_cy071210_识别算法](C_cy071210_识别算法/README.md) | 数据需求、处理流程/信号链文档、M1 合成输入演示脚本及样例 | 真实载荷适配和独立数据验证 |
-| [stone140](https://github.com/stone140) · D | [D_stone140_标注与评价](D_stone140_标注与评价/README.md) | 已约定独立标签格式和评价任务；评价程序尚未提交 | 标注细则、标签校验和评价脚本 |
+~~~mermaid
+flowchart LR
+    B["B · 雷达采集<br/>记录原始回波"] --> C["C · 识别算法<br/>输出占用证据"]
+    C --> A["A · 座位状态<br/>生成回放与事件"]
+    C --> E["计算误报、漏报和延迟"]
+    D["D · 独立标注<br/>记录现场座位状态"] --> E
+~~~
 
-[查看成果与待办看板](WORK_STATUS.md) · [查看成员与加入方式](TEAM.md) · [查看实际提交贡献](https://github.com/chenhenry0429/library-radar-dev112p/graphs/contributors)
+## 真实数据验证到哪一步
 
-## 目录导航
+| 验证内容 | 已有结果 | 证据 |
+| --- | --- | --- |
+| **采集与解码** | 6 组正式测试、2 组短复测、1 组空椅移位对照、3 段试录。正式测试含邻座和过道干扰。 | [12 段录制及数据字典](https://github.com/chenhenry0429/library-radar-dev112p/blob/data/dev112p-t01-recordings/datasets/DEV112P_T01_test_data/README.md) |
+| **占用基线回放** | P01 离线基线在名义时间 **19.74 秒**由空座切到有人。A 端本地复验处理了 840 帧，生成时间线和事件文件。 | [C 交接说明](C_cy071210_识别算法/outputs/t01-p01/handoff/INTEGRATION_NOTES.md) · [A 复验记录](对接事宜/2026-11-17_C占用基线v0.2_A端复验.md) |
+| **识别算法** | M1、B0 已能读取实测录制并生成结果。当前 M1 在 P01 上有空座误报和静坐漏检，B0 主要提供走动等运动证据。P01 坐姿输出为未知或不适用。 | [首轮算法报告与图](C_cy071210_识别算法/outputs/t01-p01/verification_report.md) |
 
-```text
-A_stone140_应用与业务/
-  README.md                       A 的成果与任务
-  offline_viewer/                  回放网页、内置数据、使用说明
-B_chenhenry0429_雷达与采集/
-  README.md                       B 的工具索引、到货前后任务
-C_cy071210_识别算法/
-  README.md                       C 的成果、运行与验证边界
-  generate_demo.py                M1 合成数据演示脚本
-  docs/                           数据需求、B0/M1、信号链说明
-D_stone140_标注与评价/
-  README.md                       独立标注和评价任务
-shared/                           共享接口入口，字段定义见 contract.py
-docs/                             操作手册、验证与架构文档
-DEMO_ONLY/                        公共模拟数据，按采集编号存放
-modules/                          旧路径兼容入口
-radar_offline.py                  全组统一命令入口
-offline_state_machine.py          公共 A 状态处理基线
-contract.py                      公共字段与严格校验
-selftest.py                      公共回归测试
-```
+P01 的切换时刻来自离线回放基线，时间按帧周期推算。该录制缺少独立动作标注，当前的复验只覆盖一次入座及后续有座状态。真实离座释放、识别准确率和实时响应需另行验收。
 
-负责人目录表示模块职责；文件的实际作者和变更历史仍以 Git 提交为准。根目录 Python/Windows 启动入口继续可用，不为每个成员复制一套公共工具。旧路径对应关系见 [目录迁移说明](docs/directory-guide.md)。
+## 怎么看页面演示
 
-## 先运行一次
+1. [下载仓库 ZIP](https://github.com/chenhenry0429/library-radar-dev112p/archive/refs/heads/main.zip) 并完整解压。
+2. 双击 `A_stone140_应用与业务/offline_viewer/index.html`。
+3. 点击 **载入模拟演示**，查看座位状态和事件随时间变化。页面内置示例为合成数据。
 
-建议 Python 3.12，锁定 NumPy 2.3.5（需 Python 3.11+）。在仓库根目录运行：
+[应用使用说明](A_stone140_应用与业务/README.md) · [操作手册 PDF](docs/operation-manual.pdf)
 
-```powershell
+<details>
+<summary>运行命令行演示</summary>
+
+使用 Python 3.12，在仓库根目录运行：
+
+~~~powershell
 python -m pip install -r requirements.txt
 python selftest.py
 python radar_offline.py demo --output DEMO_ONLY/my_first_demo
-```
+~~~
 
-Windows 可在准备好环境后双击 `run_demo.cmd`。本次运行输出位于演示目录内的 `output/<recording_id>/demo_run_01/`，包含 `timeline.csv`、`events.csv` 和 `run.json`；同名输出不会覆盖。
+输出为同一次运行的 `timeline.csv`、`events.csv` 和 `run.json`，可一起导入回放页面。Windows 也可运行 `run_demo.cmd`。
 
-查看回放：下载并完整解压仓库，双击 [A 的 offline_viewer/index.html](A_stone140_应用与业务/offline_viewer/index.html)，点击“载入模拟演示”，或选择同一次 A 运行的三个输出文件。GitHub 文件预览页显示源代码，需下载后打开网页。
+</details>
 
-## 组间怎么交接
+## 接下来验证什么
 
-```text
-B 已解码采集 -> raw.npz + meta.json
-                         |
-                         v
-C 因果算法  -> result.csv + algorithm.json
-                         |
-                         v
-A 离线业务  -> timeline.csv + events.csv + run.json
+1. **单座占用**：用有秒表记录的 P02、P04 标注静坐和离座区间，检查 M1 改进前后的漏报、误报和确认延迟。
+2. **真实数据联调**：复核 NPZ 与时间线逐帧对齐，再验证实际离座和座位释放。
+3. **坐姿与多座**：单座占用通过后，独立验证坐姿变化和相邻座位串扰。
 
-D 独立标注  -> labels.csv -> 评价（不作为 C 推理或 A 状态处理输入）
-```
-
-共享字段由 [contract.py](contract.py) 和 [shared](shared/README.md) 统一维护。v1 每目录只处理一个座位、一段连续采集；真实多座并发和硬件识别仍需验证。
-
-## 操作说明与协作
-
-- [7 页操作手册 PDF](docs/operation-manual.pdf)
-- [详细工具说明](README_先读我.md) · [离线接收说明](README_组员离线读取.txt)
-- [架构与阶段规划](docs/architecture.md) · [原有验证记录](docs/validation-report.md)
-- [如何加入、建分支与提交 PR](CONTRIBUTING.md)
-
-小组成员接受协作者邀请后可创建分支；其他参与者可 Fork 后提交 Pull Request。成员分工与 GitHub Contributors 统计分开，署名和权限说明见 [TEAM.md](TEAM.md)。
-
-真实采集、人员标注、设备序列号、订单、授权文件和厂商工具不随源代码发布。模拟示例保留来源标记。团队尚未选定开源许可证，暂不自动添加 LICENSE。
+[分工与待办](WORK_STATUS.md) · [成员与贡献](TEAM.md) · [项目架构](docs/architecture.md) · [共享字段](shared/README.md) · [协作说明](CONTRIBUTING.md)

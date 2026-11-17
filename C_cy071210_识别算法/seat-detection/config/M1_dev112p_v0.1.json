@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.1",
+  "algorithm": "M1",
+  "description": "M1 v1.1 real-device config for DEV112P 1dfft recordings (pilot: T01/P01/R01, 5.168 Hz, region [1,3] signal-calibrated, main_bin 2). Data-driven recalibration from the 2026-11-12 field recording, second pass after first replay exposed the EMA-absorption coupling: while presence=0 the background EMA (alpha=0.2) absorbs a static entrant with time constant ~1 s, so hysteresis_confirm_frames MUST stay ~1x that constant (synthetic confirm=5 at 5 Hz obeys the same constraint). Anchors therefore use adapting-bg transient semantics (probe B: empty P90 26.3 dB, entry/posture transients 33-48 dB), not frozen-bg semantics; once presence=1 freezes the bg the occupied residual naturally saturates f1n. F1 remains the only discriminating feature on this hardware; F2/F3 serve as hold-on micro-motion evidence because environmental low-frequency phase disturbance (~0.2-0.5 Hz) occupies the breathing band even when empty. f3_denominator=non_static excludes the DC bin (60+ dB static-to-modulation ratio structurally zeroes total-denominator F3). Known limitations documented in outputs/t01-p01/verification_report.md: drift-defeated release possible on long recordings; static gate inert (environment disturbance inflates f23 even when empty).",
+  "weights": {
+    "f1_residual": 0.80,
+    "f2_phase_std": 0.10,
+    "f3_breath_band": 0.10,
+    "f4_motion": 0.0
+  },
+  "thresholds": {
+    "t_on": 0.45,
+    "t_off": 0.30
+  },
+  "windows": {
+    "gate_s": 4.0,
+    "f2_s": 4.0,
+    "f3_s": 4.0,
+    "bg_warmup_s": 4.0
+  },
+  "f1_db_map": [30.0, 38.0],
+  "f2_norm_rad": 0.03,
+  "f3_band_hz": [0.1, 0.5],
+  "f3_gain": 0.8,
+  "f3_denominator": "non_static",
+  "f4_jump_db": 8.0,
+  "background": {
+    "mode": "ema",
+    "alpha": 0.02,
+    "update_when": "presence==0",
+    "freeze_when": "presence==1"
+  },
+  "background_rationale": "alpha=0.02 (tau ~9.7 s at 5.168 Hz) is required by the confirm-vs-absorption race: with alpha=0.2 the entrant is absorbed -11.7 dB within the 6-frame confirm window and a still occupant cannot confirm; alpha=0.02 loses only ~1.1 dB over the same window. Synthetic G1 implicitly obeys the same constraint (confirm=5 ~= 1 s ~= 1x tau).",
+  "confidence": {
+    "formula": "clip(0.5 + 0.49*|2*score-1|, 0.5, 0.99)",
+    "warmup_cap": 0.80
+  },
+  "hysteresis_confirm_frames": 6,
+  "static_gate": {
+    "f23_floor": 0.10
+  },
+  "quality": {
+    "low_signal_db": -60.0
+  },
+  "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown"
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261117_P00_S02_interfere_02_1d",
+  "seat_id": "seat_00",
+  "subject_id": null,
+  "session_id": "20261117_P00",
+  "source_kind": "synthetic",
+  "capture_start": "2026-11-17T00:00:00+08:00",
+  "timestamp_unit": "s",
+  "timestamp_origin": "recording_start",
+  "data_level": "1dfft",
+  "raw_shape": [
+    60,
+    64
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "range_bin"
+  ],
+  "value_unit": "complex (I+jQ), arbitrary",
+  "nominal_frame_rate_hz": 1,
+  "radar_config": {
+    "synthetic": true,
+    "n_range_bins": 64,
+    "n_doppler_bins": 16,
+    "doppler_dc_index": 0,
+    "range_resolution_m": 0.6,
+    "bandwidth_hz": 250000000,
+    "note": "G1 synthetic self-test; nominal ONELAB parameters; see seat-detection-design-v0.1.md section 6"
+  },
+  "installation": {
+    "position": "synthetic demo geometry (seat-detection-design-v0.1.md section 6)",
+    "height_m": null,
+    "angle_deg": null,
+    "region_m": null,
+    "region_bins": [
+      14,
+      22
+    ],
+    "main_bin": 17,
+    "plan": null
+  },
+  "capture_notes": "G1 synthetic self-test scenario bag (interfere); first 10 s empty prefix; generator seed scheme 20261117 + crc32(scenario)*7 + segment"
+}

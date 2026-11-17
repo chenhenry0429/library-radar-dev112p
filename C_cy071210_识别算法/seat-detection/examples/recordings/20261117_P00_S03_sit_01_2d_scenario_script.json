@@ -1,0 +1,34 @@
+{
+  "schema_version": "0.1",
+  "recording_id": "20261117_P00_S03_sit_01_2d",
+  "kind": "synthetic_scenario_script",
+  "note": "simulation ground truth for synthetic self-test only; real-data evaluation uses D's independent labels.csv",
+  "scenario": "sitting_reading",
+  "token": "sit",
+  "seed": 21129213850,
+  "level": "2d",
+  "presence_intervals_s": [
+    [
+      10.0,
+      60.0
+    ]
+  ],
+  "events": [
+    {
+      "t_s": 10.0,
+      "type": "enter"
+    },
+    {
+      "t_s": 20.0,
+      "type": "page_flip"
+    },
+    {
+      "t_s": 35.0,
+      "type": "page_flip"
+    },
+    {
+      "t_s": 47.0,
+      "type": "page_flip"
+    }
+  ]
+}

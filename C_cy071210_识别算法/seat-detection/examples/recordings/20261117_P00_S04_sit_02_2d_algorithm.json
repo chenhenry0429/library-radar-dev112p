@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261117_P00_S04_sit_02_2d",
+  "algorithm_version": "B0 v0.1 (candidate-3)",
+  "parameter_version": "286e6b25",
+  "capabilities": {
+    "presence": true,
+    "posture": false
+  },
+  "config": {
+    "algorithm": "B0",
+    "config": {
+      "schema_version": "0.1",
+      "algorithm": "B0",
+      "description": "B0 candidate 3: per-frame 2D CA-CFAR on |2dfft|^2 (integral-image), 3x3 local-max suppression, MTI static-clutter exclusion (doppler +/-1 around DC), region range filter, count hysteresis. Seated-person energy sits at doppler DC and is intentionally filtered -- this reproduces the official-baseline weak static detection and is direct RQ2 evidence; B0 v1 is a region moving-target detector, M1 owns static occupancy.",
+      "cfar": {
+        "guard_doppler": 1,
+        "guard_range": 2,
+        "train_doppler": 2,
+        "train_range": 4,
+        "p_fa": 0.001
+      },
+      "local_max_window": 3,
+      "mti": {
+        "exclude_bins": 1,
+        "note": "drop detections with |wrapped(doppler_index - dc_index)| <= exclude_bins"
+      },
+      "region_filter": true,
+      "hysteresis": {
+        "t_on_frames": 2,
+        "t_off_frames": 3,
+        "count_on": 1,
+        "count_off": 0
+      },
+      "quality": {
+        "low_signal_db": -60.0
+      },
+      "target_count_policy": "in-region point count after MTI (per frame), -1 when unknown/invalid"
+    },
+    "config_source": "C:\\Users\\cy\\DeepWorks\\seat-detection\\config\\B0_default.json",
+    "region_params": {
+      "schema_version": "0.1",
+      "range_resolution_m": 0.6,
+      "note": "Nominal installation values from project plan 5.2 (24-24.25 GHz sweep -> 0.6 m resolution). Replace with measured values after real installation. Coarse-granularity risk documented: plan A region spans only ~3-4 bins.",
+      "plans": {
+        "A": {
+          "mount_height_m": 0.75,
+          "distance_to_seat_m": [
+            0.5,
+            1.0
+          ],
+          "pitch_deg": -10.0,
+          "region_m": [
+            0.4,
+            1.3
+          ]
+        },
+        "B": {
+          "mount_height_m": 2.0,
+          "distance_to_seat_m": [
+            1.8,
+            2.2
+          ],
+          "pitch_deg": -45.0,
+          "region_m": [
+            1.5,
+            2.5
+          ]
+        }
+      },
+      "angle_compensation_deg": {
+        "H": {
+          "TX1-RX4": -93.0,
+          "TX1-RX3": -88.0
+        },
+        "E": {
+          "TX1-RX1": 10.0,
+          "TX1-RX4": -55.0,
+          "TX2-RX3": -16.0
+        }
+      },
+      "bin_conversion": "bin_lo = floor(region_m[0] / range_resolution_m); bin_hi = ceil(region_m[1] / range_resolution_m); clip to [0, n_range_bins-1]"
+    },
+    "degraded_input": false,
+    "region": {
+      "lo": 14,
+      "hi": 22,
+      "main_bin": 17,
+      "source": "meta_explicit"
+    }
+  },
+  "window_s": 0.0,
+  "smoothing": "count hysteresis t_on_frames=2 t_off_frames=3 (per-frame CFAR, no temporal window)",
+  "model_version": "B0-v0.1-c3",
+  "calibrations": [],
+  "notes": []
+}

@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.1",
+  "algorithm": "M1",
+  "description": "M1 v1.1: region-limited residual energy (F1) + main-bin phase std (F2) + breathing band ratio (F3) + reserved motion slot (F4), gated score, dual-threshold hysteresis with confirm debounce and static gate. Demo-compatible structure with re-tuned weights 0.45/0.30/0.25 so a static bag cannot cross T_ON alone (G1 condition b). hysteresis_confirm_frames=5 (feature-window frames + 1) rides out the bag-placement transient; static_gate.f23_floor forces release when the 4 s windowed mean of (F2n+F3n) < 0.10 (leave-with-bag protection, complex input only).",
+  "weights": {
+    "f1_residual": 0.45,
+    "f2_phase_std": 0.30,
+    "f3_breath_band": 0.25,
+    "f4_motion": 0.0
+  },
+  "thresholds": {
+    "t_on": 0.5,
+    "t_off": 0.35
+  },
+  "windows": {
+    "gate_s": 4.0,
+    "f2_s": 4.0,
+    "f3_s": 4.0,
+    "bg_warmup_s": 4.0
+  },
+  "f1_db_map": [-9.0, 8.0],
+  "f2_norm_rad": 0.30,
+  "f3_band_hz": [0.1, 0.5],
+  "f3_gain": 1.5,
+  "f4_jump_db": 12.0,
+  "background": {
+    "mode": "ema",
+    "alpha": 0.2,
+    "update_when": "presence==0",
+    "freeze_when": "presence==1"
+  },
+  "confidence": {
+    "formula": "clip(0.5 + 0.49*|2*score-1|, 0.5, 0.99)",
+    "warmup_cap": 0.80
+  },
+  "hysteresis_confirm_frames": 5,
+  "static_gate": {
+    "f23_floor": 0.10
+  },
+  "quality": {
+    "low_signal_db": -60.0
+  },
+  "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown"
+}

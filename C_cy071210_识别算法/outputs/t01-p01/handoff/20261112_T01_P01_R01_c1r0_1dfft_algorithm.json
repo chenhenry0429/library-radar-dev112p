@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261112_T01_P01_R01_c1r0_1dfft",
+  "algorithm_version": "data-driven-baseline v0.1 (C draft, pending D annotation)",
+  "parameter_version": "baseline-19.7s-156.3s",
+  "capabilities": {
+    "presence": true,
+    "posture": false
+  },
+  "result_provenance": {
+    "type": "offline data-driven baseline (NOT a streaming algorithm output)",
+    "method": "Per-frame presence derived from signal evidence on this single recording: probeB continuous-EMA change-point clusters (threshold 33.1 dB), region[1,3] residual lift (+3.3..+11.6 dB), main-bin breathing-band peak (0.21 Hz, share 0.46). Full evidence chain in outputs/t01-p01/verification_report.md.",
+    "boundary": {
+      "empty": [0.0, 19.737],
+      "occupied": [19.737, 162.4665]
+    },
+    "confidence_rule": "0.90 default; 0.70 for t >= 156.3 s (large end-of-recording movement, nature unknown, conservatively labeled occupied)",
+    "posture_policy": "all frames posture='unknown' (M1 v1.1 has no posture capability; the verbal script deviates from measured change-point evidence and cannot be trusted for posture)",
+    "intended_use": "state-machine integration and UI acceptance for THIS recording only; to be replaced by algorithm output after M1 structural fix, and superseded by D-annotated labels"
+  },
+  "known_issues": [
+    "M1 v1.1 algorithm output on this recording is not usable: alpha=0.2 run misses the still occupant (presence rises only at 72 s), alpha=0.02 run false-triggers from 4.1 s for the whole recording; structural cause: empty-seat environmental residual vs slowly-adapted background (37 dB) is only 3.3 dB below occupied lift (40.5 dB), leaving no working point for the EMA background; fix requires design-level change (pre-entry background snapshot / drift compensation)",
+    "static gate inert on this hardware: empty-seat environmental low-frequency disturbance (~0.2-0.5 Hz) inflates f23 above floor even when empty",
+    "F2/F3 features do not discriminate on this recording (empty phase std 0.024 rad > occupied 0.012 rad, inverted)",
+    "static clutter phase drift +8.8 dB/162 s vs fixed reference; M1 release after leave can fail on long recordings",
+    "calibration_status='uncalibrated': range bins not mapped to meters; region [1,3] and main_bin 2 are per-seat signal-calibrated (breathing evidence), not geometry-based; do not reuse on other seats/installations",
+    "verbal script deviates from measurements: actual seating at ~19.7 s (script said 15 s); scripted 125-140 s leave has no change-point evidence (person did not leave); end-of-recording movement 156.3-162.3 s is unlabeled",
+    "two partial frames (0 and 839, missing chirps; quality still 'ok', 1dfft uses valid-chirp mean); chip0/bin0 has 3.1% int16 negative saturation, chain chip1/rx0 selected to avoid it",
+    "single recording, single seat (T01), single chain (chip1/rx0): baseline must not be generalized",
+    "B0 replay (2dfft) detects motion, not static occupancy (24% occupied-frame detection by design); do not wire B0 presence as the occupancy source for a static-seated user"
+  ],
+  "interface_notes": {
+    "columns": ["frame_id", "timestamp", "presence", "presence_confidence", "target_count", "posture", "posture_confidence", "calibration_status", "quality"],
+    "rows": 840,
+    "frame_rate_hz": 5.168,
+    "presence_values": "0 empty / 1 occupied (-1 unknown not used in this recording)",
+    "target_count_policy": "1 when presence=1 (single-seat assumption), 0 when empty",
+    "posture_confidence": "empty (posture not supported)",
+    "state_machine_hint": "edge at frame 102 (t=19.737 s); expect ~4 s confirmation latency once M1 is fixed (confirm window), plan hysteresis accordingly"
+  },
+  "source_files": {
+    "adapted_data": "seat-detection/examples/real/20261112_T01_P01_R01_c1r0_{1dfft,2dfft}_raw.npz",
+    "m1_raw_replay": "outputs/t01-p01/m1_result/ (reference only, false-positive run)",
+    "b0_raw_replay": "outputs/t01-p01/b0_result/ (motion detector evidence)",
+    "labels_skeleton": "outputs/t01-p01/labels_draft_unverified.csv",
+    "verification_report": "outputs/t01-p01/verification_report.md"
+  },
+  "model_version": "baseline-v0.1",
+  "calibrations": [],
+  "notes": [
+    "Delivered locally; shared repository push pending user decision on repo visibility/address.",
+    "Wait for D annotation before freezing any evaluation ground truth."
+  ]
+}

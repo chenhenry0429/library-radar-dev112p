@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.1",
+  "recording_id": "20261117_P00_S04_sit_02_2d",
+  "kind": "synthetic_scenario_script",
+  "note": "simulation ground truth for synthetic self-test only; real-data evaluation uses D's independent labels.csv",
+  "scenario": "sitting_still",
+  "token": "sit",
+  "seed": 3178821265,
+  "level": "2d",
+  "presence_intervals_s": [
+    [
+      10.0,
+      60.0
+    ]
+  ],
+  "events": [
+    {
+      "t_s": 10.0,
+      "type": "enter"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1",
+  "algorithm": "B0",
+  "description": "B0 candidate 3: per-frame 2D CA-CFAR on |2dfft|^2 (integral-image), 3x3 local-max suppression, MTI static-clutter exclusion (doppler +/-1 around DC), region range filter, count hysteresis. Seated-person energy sits at doppler DC and is intentionally filtered -- this reproduces the official-baseline weak static detection and is direct RQ2 evidence; B0 v1 is a region moving-target detector, M1 owns static occupancy.",
+  "cfar": {
+    "guard_doppler": 1,
+    "guard_range": 2,
+    "train_doppler": 2,
+    "train_range": 4,
+    "p_fa": 0.001
+  },
+  "local_max_window": 3,
+  "mti": {
+    "exclude_bins": 1,
+    "note": "drop detections with |wrapped(doppler_index - dc_index)| <= exclude_bins"
+  },
+  "region_filter": true,
+  "hysteresis": {
+    "t_on_frames": 2,
+    "t_off_frames": 3,
+    "count_on": 1,
+    "count_off": 0
+  },
+  "quality": {
+    "low_signal_db": -60.0
+  },
+  "target_count_policy": "in-region point count after MTI (per frame), -1 when unknown/invalid"
+}

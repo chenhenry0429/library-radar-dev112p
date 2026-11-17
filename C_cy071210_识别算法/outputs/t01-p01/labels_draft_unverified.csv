@@ -1,0 +1,15 @@
+start_timestamp,end_timestamp,seat_id,presence_label,posture_label,event_label,annotator
+0.000,19.737,T01,0,not_applicable,,C_draft_unverified
+19.737,29.200,T01,1,unknown,enter,C_draft_unverified
+29.200,71.200,T01,1,unknown,,C_draft_unverified
+71.200,73.900,T01,1,unknown,posture_shift,C_draft_unverified
+73.900,78.400,T01,1,unknown,,C_draft_unverified
+78.400,84.200,T01,1,unknown,posture_shift,C_draft_unverified
+84.200,90.800,T01,1,unknown,,C_draft_unverified
+90.800,91.700,T01,1,unknown,posture_shift,C_draft_unverified
+91.700,101.800,T01,1,unknown,,C_draft_unverified
+101.800,109.700,T01,1,unknown,posture_shift,C_draft_unverified
+109.700,140.100,T01,1,unknown,,C_draft_unverified
+140.100,144.200,T01,1,unknown,posture_shift,C_draft_unverified
+144.200,156.300,T01,1,unknown,,C_draft_unverified
+156.300,162.470,T01,1,unknown,,C_draft_unverified

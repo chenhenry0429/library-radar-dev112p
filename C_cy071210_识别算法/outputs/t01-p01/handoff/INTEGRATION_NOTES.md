@@ -1,7 +1,7 @@
 # 交付说明：第一组实测数据三件套（状态机 / 页面验收用）
 
 > 录制：`20261112_T01_P01_R01`（chip1/rx0 链路，840 帧 @ 5.168 Hz，时长 162.5 s）
-> 版本：**data-driven-baseline v0.2（已固定）**；v0.2 按 A 端反馈规范化字段
+> 版本：**data-driven-baseline v0.3（已固定）**；v0.2 按 A 端反馈规范化字段；v0.3 对齐根目录 `contract.py` 校验器
 > 交付方式：本地产物目录（共享仓库地址与可见性未决，确定后可原样提交）
 
 ## 三件套（本目录）
@@ -24,15 +24,28 @@
   `posture=not_applicable`（不适用）。`posture_confidence` 为空。`capabilities` 为
   `["presence"]`（列表格式，与 demo 四件套一致）。
 
-## 字段规范（v0.2，对齐 DEMO_ONLY/release_demo 格式）
+## 字段规范（v0.3，对齐 DEMO_ONLY 格式 + 根目录 contract.py）
 
-- `capabilities`：列表（本版本仅 `["presence"]`）
+- `capabilities`：列表（本版本仅 `["presence"]`；见下方 contract 冲突注记）
 - `window_s`：`0.1935`（逐帧粒度 = 名义帧周期；离线基线无聚合窗口）
-- `smoothing`：`"none"`（离线基线，无流式平滑）
-- `config`：判定参数结构化（边界、变化点阈值 33.1 dB、EMA α=0.2、region [1,3]/main_bin 2、
-  置信度与 posture 规则）
-- `time_base.source = "nominal_frame_period"`：**timestamp 由名义帧周期推算**
-  （frame_id / 5.168 Hz，共 840 帧），未与采集端墙钟对齐；来源说明待与 B 端采集（陈植轩）确认。
+- `smoothing`：`"none"`，另加 `temporal_smoothing: "none"`（contract.py 必填键）
+- `thresholds`：顶层 dict（contract.py 必填键）：change_point_db 33.1、residual_lift_db_min 3.3、
+  breath_band_hz [0.2,0.3]、breath_band_share_min 0.2、置信度规则
+- `config`：判定参数结构化（边界、EMA α=0.2、region [1,3]/main_bin 2、posture 规则）
+- meta 时间字段（contract.py L121 校验）：`timestamp_unit="seconds"`、
+  `timestamp_origin="recording_start"`；**按帧周期推算的来源说明保留在 `timestamp_source`**
+  （frame_id × 0.1935 s，未墙钟对齐，待与 B 端陈植轩确认）
+- meta 补必填：`session_id="R01"`、`iq_representation`（complex64 载荷必填）
+- result.csv timestamp 已按 `repr(float)` 重写，与 NPZ `timestamps` **逐位 round-trip**
+  （修复 153 帧截断值，contract.py load_result 校验通过）
+
+### contract.py 冲突注记（待 A 确认）
+
+仓库根 `contract.py` 的 `validate_algorithm` 要求 `capabilities` 为 dict
+（`{"presence": bool, "posture": bool}`），与 A 端反馈「统一为列表」及 DEMO_ONLY 格式冲突。
+本文件按 A 端最新反馈用**列表**；其余 11 个必填键已按 contract.py 校验通过（dict 变体全过、
+`load_b` 与 `load_result` 840 行全过）。**请 A 确认 run-a 使用的校验器版本**，若为旧
+contract.py 需 A 端同步更新，或告知 C 切回 dict 格式。
 
 ## 重要：这份 result 的性质
 

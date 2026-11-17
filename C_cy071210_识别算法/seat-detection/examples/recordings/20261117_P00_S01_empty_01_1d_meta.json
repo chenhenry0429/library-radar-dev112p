@@ -6,7 +6,7 @@
   "session_id": "20261117_P00",
   "source_kind": "synthetic",
   "capture_start": "2026-11-17T00:00:00+08:00",
-  "timestamp_unit": "s",
+  "timestamp_unit": "seconds",
   "timestamp_origin": "recording_start",
   "data_level": "1dfft",
   "raw_shape": [
@@ -41,5 +41,6 @@
     "main_bin": 17,
     "plan": null
   },
-  "capture_notes": "G1 synthetic self-test scenario empty (empty); first 10 s empty prefix; generator seed scheme 20261117 + crc32(scenario)*7 + segment"
+  "capture_notes": "G1 synthetic self-test scenario empty (empty); first 10 s empty prefix; generator seed scheme 20261117 + crc32(scenario)*7 + segment",
+  "iq_representation": "complex64 I/Q (synthetic); no DC removal applied"
 }

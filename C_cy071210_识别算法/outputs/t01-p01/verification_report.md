@@ -56,6 +56,16 @@ F2/F3 判别力弱（空座相位 std 0.024 > 有人 0.012 rad，反转）。
 > `unknown` 改为 `not_applicable`（102 帧，有人帧仍 `unknown`）；`time_base` 注明时间戳由
 > 名义帧周期推算、未墙钟对齐（待与 B 端采集陈植轩确认）。版本固定
 > **data-driven-baseline v0.2**；用途界定：单次录制占用基线联调，不作 M1/坐姿验收。
+>
+> **v0.3 修订（根目录 contract.py 对齐）**：meta 时间字段过校验器 L121
+> （`timestamp_unit="seconds"`、`timestamp_origin="recording_start"`，推算说明移入
+> `timestamp_source`）；meta 补必填 `session_id="R01"`、`iq_representation`；algorithm 补
+> contract 必填 `thresholds`（dict）与 `temporal_smoothing="none"`；result.csv timestamp
+> 改 `repr(float)` 与 NPZ 逐位 round-trip（修复 153 帧截断）。contract.py 全链实跑：
+> `load_b` OK、`load_result` 840 行 OK；唯一冲突为 `capabilities` 列表 vs contract 旧 dict
+> 约定（遵 A 端最新反馈保留列表，待 A 确认 run-a 校验器版本）。合成样例 20 个 meta 同步
+> 修复（unit/iq_representation）；适配器与合成生成器源码同步修正。版本
+> **data-driven-baseline v0.3**。
 
 [baseline_presence_result.csv](baseline_presence_result.csv)：统一接口 9 列、840 帧连续；
 0–19.737s 无人（102 帧）、19.737–162.47s 有人（738 帧）；posture：有人帧 `unknown`、

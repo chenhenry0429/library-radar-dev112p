@@ -107,18 +107,26 @@ def build_meta(rid, am, chip, rx, data_level, axis_order, shape, post_note,
         "recording_id": rid,
         "seat_id": am.get("seat_id"),
         "subject_id": am.get("subject_id"),
-        "session_id": None,
+        "session_id": "R01",
         "source_kind": "measured",
         "capture_start": "2026-11-12T19:41:47+08:00",
-        "timestamp_unit": "s",
-        "timestamp_origin": ("nominal: frame_ids x 0.1935 s from first captured "
-                             "frame group (may be partial); raw .dat write window "
-                             "19:41:47-19:44:29 per field log"),
+        "timestamp_unit": "seconds",
+        "timestamp_origin": "recording_start",
+        "timestamp_source": ("derived: frame_id x nominal_frame_period (0.1935 s) from first "
+                             "captured frame group (frame 0 may be partial); not wall-clock "
+                             "aligned; raw .dat write window 19:41:47-19:44:29 per field log; "
+                             "pending confirmation with B-side acquisition (Chen Zhixuan)"),
         "data_level": data_level,
         "raw_shape": list(shape),
         "raw_dtype": "complex64",
         "axis_order": axis_order,
         "value_unit": "device_fft_counts",
+        "iq_representation": (
+            "complex64 I/Q (device 1dfft output, valid-chirp merged mean); no DC removal applied"
+            if data_level == "1dfft" else
+            "complex64 I/Q (device 2dfft output, zero-filled missing chirps in partial frames 0/839); "
+            "no DC removal applied"
+        ),
         "nominal_frame_rate_hz": am["radar_config"]["nominal_frame_rate_hz"],
         "radar_config": rc,
         "installation": {

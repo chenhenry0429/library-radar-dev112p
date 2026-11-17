@@ -1,0 +1,224 @@
+{
+  "format": "dev112p_decoded_1dfft_archive",
+  "archive_version": 1,
+  "recording_id": "T01_P02_retest",
+  "seat_id": "T01",
+  "subject_id": "P02",
+  "source_kind": "measured",
+  "device_model": "DEV112P",
+  "data_level": "1dfft",
+  "raw_shape": [
+    497,
+    2,
+    2,
+    64,
+    8,
+    2
+  ],
+  "raw_dtype": "int16",
+  "axis_order": [
+    "frame",
+    "chip",
+    "rx",
+    "chirp",
+    "range_fft_bin",
+    "iq_component"
+  ],
+  "value_unit": "device_fft_counts",
+  "iq_representation": [
+    "real",
+    "imaginary"
+  ],
+  "axis_coordinates": {
+    "chip": [
+      0,
+      1
+    ],
+    "rx": [
+      0,
+      1
+    ],
+    "chirp": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63
+    ],
+    "range_fft_bin": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "iq_component": [
+      "I",
+      "Q"
+    ]
+  },
+  "radar_config": {
+    "nominal_frame_period_s": 0.1935,
+    "nominal_frame_rate_hz": 5.167958656330749,
+    "tx_polling": 1,
+    "range_bin_distance_m": null,
+    "chirp_to_physical_tx_mapping": null
+  },
+  "timing": {
+    "measured_frame_timestamps": null,
+    "nominal_axis": "nominal_time_s",
+    "unit": "s",
+    "origin": "first captured frame group, which may be partial",
+    "method": "frame_ids multiplied by the configured nominal frame period",
+    "stopwatch_alignment": null
+  },
+  "arrays": {
+    "raw_data": {
+      "dtype": "int16",
+      "shape": [
+        497,
+        2,
+        2,
+        64,
+        8,
+        2
+      ]
+    },
+    "valid_chirps": {
+      "dtype": "bool",
+      "shape": [
+        497,
+        2,
+        2,
+        64
+      ],
+      "false_means": "missing packet; both I/Q values are zero-filled"
+    },
+    "frame_ids": {
+      "dtype": "int64",
+      "shape": [
+        497
+      ],
+      "unit": "index"
+    },
+    "device_frame_ids": {
+      "dtype": "uint8",
+      "shape": [
+        497
+      ],
+      "unit": "counter modulo 16"
+    },
+    "nominal_time_s": {
+      "dtype": "float64",
+      "shape": [
+        497
+      ],
+      "unit": "s"
+    }
+  },
+  "integrity": {
+    "validated_data_packets": 127160,
+    "complete_frames": 495,
+    "partial_frame_ids": [
+      0,
+      496
+    ],
+    "valid_packets_in_partial_frames": [
+      212,
+      228
+    ],
+    "excluded_non_fft_wrappers": 38,
+    "source_dat_sha256": "8c4dc4848bb7a2a67d0d9d1b1e88d2125488c01ba9bf90980438233478472bbc",
+    "source_config_sha256": "b1013256059cc1695fbd4f758c8ba0beab6dcddb54c79d51d5ebc7d8252919af",
+    "raw_npz_sha256": "7b78661c61421bbe62bbac77992c73709b6fffd7cadef1308951c9ec69c24960"
+  },
+  "annotation": {
+    "actual_action_timestamps_available": true,
+    "stopwatch_events": [
+      {
+        "time_s": 19.2,
+        "event": "首次坐稳"
+      },
+      {
+        "time_s": 36.39,
+        "event": "后靠到位"
+      },
+      {
+        "time_s": 55.05,
+        "event": "第一次走远"
+      },
+      {
+        "time_s": 71.7,
+        "event": "返回坐稳"
+      },
+      {
+        "time_s": 83.97,
+        "event": "第二次走远"
+      }
+    ],
+    "stopwatch_origin": "operator clicked Start",
+    "plan_is_ground_truth": false
+  }
+}

@@ -1,0 +1,4 @@
+__pycache__/
+test-results/
+labels_local/
+reports_local/

@@ -1,0 +1,32 @@
+{
+  "recording_id": "20261112_T01_P01_R01_c1r0_1dfft",
+  "frame_count": 840,
+  "raw_shape": [
+    840,
+    8
+  ],
+  "raw_dtype": "complex64",
+  "ids_equal": true,
+  "timestamps_exact": false,
+  "max_timestamp_difference_s": 2.842170943040401e-14,
+  "timestamps_within_1e_12": true,
+  "tolerance_is_diagnostic_not_schema_change": true,
+  "status": "numerically_close_not_exact",
+  "source_kind": "measured",
+  "timestamp_origin": "nominal: frame_ids x 0.1935 s from first captured frame group (may be partial); raw .dat write window 19:41:47-19:44:29 per field log",
+  "limitation": "nominal time alignment does not prove wall-clock synchronization or absence of packet loss",
+  "inputs": [
+    {
+      "file": "20261112_T01_P01_R01_c1r0_1dfft_raw.npz",
+      "sha256": "7d6609791228478d849ae05d143ca72f00ab9e12050daa2c1f537d6238ad0d70"
+    },
+    {
+      "file": "20261112_T01_P01_R01_c1r0_1dfft_result.csv",
+      "sha256": "c23e90c1ac1190302354b5f569f105119ed25760f974dd088d92db1d1328d410"
+    },
+    {
+      "file": "20261112_T01_P01_R01_c1r0_1dfft_meta.json",
+      "sha256": "e077c99e12605a9d08f55309eacf2480c83c3252eca0f0067f632780b057c9e7"
+    }
+  ]
+}

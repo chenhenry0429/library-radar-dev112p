@@ -1,4 +1,4 @@
-"""A 端实时入口 v0.2.0。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.3.0。运行 python live_monitor.py --help。"""
 import argparse
 import csv
 from hmac import compare_digest
@@ -24,6 +24,9 @@ ASSETS = {
     "/": ("live_viewer/monitor.html", "text/html"),
     "/monitor.css": ("live_viewer/monitor.css", "text/css"),
     "/monitor.js": ("live_viewer/monitor.js", "text/javascript"),
+    "/student/": ("live_viewer/student.html", "text/html"),
+    "/student/student.css": ("live_viewer/student.css", "text/css"),
+    "/student/student.js": ("live_viewer/student.js", "text/javascript"),
     "/live/": ("live_viewer/index.html", "text/html"),
     "/live.js": ("live_viewer/live.js", "text/javascript"),
     "/live.css": ("live_viewer/live.css", "text/css"),

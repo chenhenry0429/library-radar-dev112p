@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>自习座位</title>
+  <link rel="stylesheet" href="./student.css">
+  <script src="./student.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <section class="intro" aria-labelledby="page-title">
+      <div><h1 id="page-title">自习座位</h1><p>查看座位状态和坐姿提醒。</p></div>
+      <span class="feed" id="feed">连接中</span>
+    </section>
+
+    <div class="cards">
+      <section class="card seat" id="seat-card" data-tone="waiting" aria-labelledby="seat-heading">
+        <div class="seat-top"><h2 id="seat-heading">座位状态</h2><span class="seat-id" id="seat-id" hidden></span></div>
+        <div class="chair" aria-hidden="true"><i></i><b></b></div>
+        <div class="seat-feedback" role="status">
+          <strong id="seat-status">待确认</strong>
+          <p id="seat-note">正在连接座位监测服务。</p>
+        </div>
+        <div class="release" id="release" hidden><span>预计释放剩余</span><strong id="release-time"></strong></div>
+      </section>
+
+      <section class="card posture" id="pose-card" data-tone="waiting" aria-labelledby="pose-heading">
+        <h2 id="pose-heading">坐姿提醒</h2>
+        <div class="pose-feedback" role="status">
+          <strong id="pose-status">等待座位状态</strong>
+          <p id="pose-note">座位投入使用后显示坐姿反馈。</p>
+        </div>
+        <div id="posture-timer" class="posture-timer" hidden>
+          <div><span>当前姿态持续时间</span><span id="posture-time"></span></div>
+          <progress id="posture-progress" aria-label="姿态提醒进度" value="0" max="1"></progress>
+        </div>
+      </section>
+    </div>
+
+    <section class="legend" aria-label="座位状态说明">
+      <span><i class="free"></i>空闲可用</span><span><i class="occupied"></i>有人使用</span><span><i class="waiting"></i>暂不可用</span>
+    </section>
+  </main>
+</body>
+</html>

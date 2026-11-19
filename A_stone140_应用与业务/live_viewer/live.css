@@ -4,6 +4,10 @@ body { margin: 0; }
 header { padding: 1.8rem max(1.25rem, calc((100vw - 62rem)/2)); background: #153c45; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 h1, h2, p { margin: 0; }
 h1 { font-size: 1.6rem; }
+.monitor-embedded header { background: #e0eded; color: #17343b; padding-block: .7rem; }
+.monitor-embedded header h1 { display: none; }
+.monitor-embedded header p { color: #365d65; margin: 0; }
+.monitor-embedded #connection { color: #fff; }
 header p { color: #c3dbdd; margin-top: .25rem; }
 #connection { padding: .3rem .8rem; background: #275862; border-radius: .5rem; white-space: nowrap; }
 main { max-width: 64.5rem; margin: auto; padding: 1.75rem 1.25rem; }

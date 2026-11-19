@@ -1,4 +1,4 @@
-"""A 端实时入口 v0.1.0。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.1.1。运行 python live_monitor.py --help。"""
 import argparse
 from collections import deque
 import csv
@@ -20,8 +20,18 @@ from offline_state_machine import StateMachine, validate_config
 
 DEMO_ID = "20261103_PDEMO_S01_lifecycle_01"
 DEMO = ROOT.parent / "DEMO_ONLY" / "release_demo" / DEMO_ID / f"{DEMO_ID}_result.csv"
-ASSETS = {"/": ("index.html", "text/html"), "/live.js": ("live.js", "text/javascript"),
-          "/live.css": ("live.css", "text/css")}
+ASSETS = {
+    "/": ("live_viewer/monitor.html", "text/html"),
+    "/monitor.css": ("live_viewer/monitor.css", "text/css"),
+    "/monitor.js": ("live_viewer/monitor.js", "text/javascript"),
+    "/live/": ("live_viewer/index.html", "text/html"),
+    "/live.js": ("live_viewer/live.js", "text/javascript"),
+    "/live.css": ("live_viewer/live.css", "text/css"),
+    "/offline/": ("offline_viewer/index.html", "text/html"),
+    **{f"/offline/{name}": (f"offline_viewer/{name}", "text/javascript") for name in (
+        "demo-data.js", "acceptance-data.js", "seat-display.js"
+    )},
+}
 
 
 class LiveMonitor:
@@ -122,7 +132,7 @@ def handler_for(monitor, token):
                 self.send_json(monitor.snapshot())
             elif self.path in ASSETS:
                 name, mime = ASSETS[self.path]
-                self.respond((ROOT / "live_viewer" / name).read_bytes(), mime)
+                self.respond((ROOT / name).read_bytes(), mime)
             else:
                 self.send_json({"error": "地址不存在"}, 404)
 

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>座位监测与回放</title>
+  <link rel="stylesheet" href="/monitor.css">
+  <script src="/monitor.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>座位监测与回放</h1>
+    <nav role="tablist" aria-label="查看模式">
+      <button type="button" id="live-tab" role="tab" aria-selected="true" aria-controls="live-panel">实时监测</button>
+      <button type="button" id="offline-tab" role="tab" aria-selected="false" aria-controls="offline-panel" tabindex="-1">离线回放</button>
+    </nav>
+  </header>
+  <main>
+    <section id="live-panel" role="tabpanel" aria-labelledby="live-tab">
+      <iframe title="实时监测" src="/live/"></iframe>
+    </section>
+    <section id="offline-panel" role="tabpanel" aria-labelledby="offline-tab" hidden>
+      <iframe title="离线回放" data-src="/offline/"></iframe>
+    </section>
+    <noscript><p>请启用 JavaScript，或直接打开 <a href="/offline/">离线页面</a>。</p></noscript>
+  </main>
+</body>
+</html>

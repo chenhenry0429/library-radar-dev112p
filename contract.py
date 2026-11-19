@@ -240,6 +240,40 @@ def _float(s, path, row, col, optional=False):
         fail(path, f"CSV row {row}, {col}", "finite number required")
 
 
+def parse_result_row(d, alg, path, line):
+    if None in d or any(v is None for v in d.values()):
+        fail(path, f"CSV row {line}", "wrong field count")
+    r = dict(d)
+    for k in ("frame_id", "presence", "target_count"):
+        r[k] = _int(d[k], path, line, k)
+    r["timestamp"] = _float(d["timestamp"], path, line, "timestamp")
+    for k in ("presence_confidence", "posture_confidence"):
+        r[k] = _float(d[k], path, line, k, True)
+        if r[k] is not None and not 0 <= r[k] <= 1:
+            fail(path, f"CSV row {line}, {k}", "must be [0,1] or blank")
+    loc = f"CSV row {line}"
+    p, count, pose, cal, q = (r[k] for k in ("presence", "target_count", "posture", "calibration_status", "quality"))
+    if p not in {-1, 0, 1} or count < -1 or pose not in POSTURES or cal not in CALIBRATIONS or q not in QUALITIES:
+        fail(path, loc, "illegal enumeration or target_count")
+    if p == 0 and (count != 0 or pose != "not_applicable"):
+        fail(path, loc, "absent requires count=0, posture=not_applicable")
+    if p == -1 and (count != -1 or pose != "unknown" or r["presence_confidence"] is not None):
+        fail(path, loc, "unknown presence requires count=-1, posture=unknown, blank confidence")
+    if p == 1 and (count == 0 or pose == "not_applicable" or (cal != "valid" and pose != "unknown")):
+        fail(path, loc, "inconsistent present/calibration/posture combination")
+    if pose in {"unknown", "not_applicable"} and r["posture_confidence"] is not None:
+        fail(path, loc, "unknown/not_applicable posture requires blank confidence")
+    if q != "ok" and (p != -1 or pose != "unknown" or r["presence_confidence"] is not None or r["posture_confidence"] is not None):
+        fail(path, loc, "bad quality must be unknown with blank confidences")
+    if not alg["capabilities"]["presence"] and p != -1:
+        fail(path, loc, "presence evidence exceeds declared capabilities")
+    if not alg["capabilities"]["posture"] and (cal != "uncalibrated" or pose in {"reference", "forward", "backward"}):
+        fail(path, loc, "posture unsupported: use uncalibrated and unknown/not_applicable")
+    if cal == "valid" and active_calibration(alg, r["timestamp"]) is None:
+        fail(path, loc, "valid status has no current calibration record")
+    return r
+
+
 def load_result(path, arrays, meta, alg):
     rows = []
     with Path(path).open(encoding="utf-8-sig", newline="") as f:
@@ -247,41 +281,12 @@ def load_result(path, arrays, meta, alg):
         if reader.fieldnames != RESULT_COLUMNS:
             fail(path, "CSV row 1", "fixed nine-column header required, in specified order")
         for line, d in enumerate(reader, 2):
-            if None in d or any(v is None for v in d.values()):
-                fail(path, f"CSV row {line}", "wrong field count")
-            r = dict(d)
-            for k in ("frame_id", "presence", "target_count"):
-                r[k] = _int(d[k], path, line, k)
-            r["timestamp"] = _float(d["timestamp"], path, line, "timestamp")
-            for k in ("presence_confidence", "posture_confidence"):
-                r[k] = _float(d[k], path, line, k, True)
-                if r[k] is not None and not 0 <= r[k] <= 1:
-                    fail(path, f"CSV row {line}, {k}", "must be [0,1] or blank")
-            loc = f"CSV row {line}"
             i = len(rows)
             if i >= len(arrays["timestamps"]):
-                fail(path, loc, "more result rows than raw frames")
+                fail(path, f"CSV row {line}", "more result rows than raw frames")
+            r = parse_result_row(d, alg, path, line)
             if r["frame_id"] != int(arrays["frame_ids"][i]) or r["timestamp"] != float(arrays["timestamps"][i]):
-                fail(path, loc, "frame_id/timestamp must exactly round-trip and match raw row")
-            p, count, pose, cal, q = (r[k] for k in ("presence", "target_count", "posture", "calibration_status", "quality"))
-            if p not in {-1, 0, 1} or count < -1 or pose not in POSTURES or cal not in CALIBRATIONS or q not in QUALITIES:
-                fail(path, loc, "illegal enumeration or target_count")
-            if p == 0 and (count != 0 or pose != "not_applicable"):
-                fail(path, loc, "absent requires count=0, posture=not_applicable")
-            if p == -1 and (count != -1 or pose != "unknown" or r["presence_confidence"] is not None):
-                fail(path, loc, "unknown presence requires count=-1, posture=unknown, blank confidence")
-            if p == 1 and (count == 0 or pose == "not_applicable" or (cal != "valid" and pose != "unknown")):
-                fail(path, loc, "inconsistent present/calibration/posture combination")
-            if pose in {"unknown", "not_applicable"} and r["posture_confidence"] is not None:
-                fail(path, loc, "unknown/not_applicable posture requires blank confidence")
-            if q != "ok" and (p != -1 or pose != "unknown" or r["presence_confidence"] is not None or r["posture_confidence"] is not None):
-                fail(path, loc, "bad quality must be unknown with blank confidences")
-            if not alg["capabilities"]["presence"] and p != -1:
-                fail(path, loc, "presence evidence exceeds declared capabilities")
-            if not alg["capabilities"]["posture"] and (cal != "uncalibrated" or pose in {"reference", "forward", "backward"}):
-                fail(path, loc, "posture unsupported: use uncalibrated and unknown/not_applicable")
-            if cal == "valid" and active_calibration(alg, r["timestamp"]) is None:
-                fail(path, loc, "valid status has no current calibration record")
+                fail(path, f"CSV row {line}", "frame_id/timestamp must exactly round-trip and match raw row")
             rows.append(r)
     if len(rows) != len(arrays["timestamps"]):
         fail(path, f"CSV row {len(rows) + 2}", "missing result row; no padding performed")

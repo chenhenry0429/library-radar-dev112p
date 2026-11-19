@@ -1,6 +1,5 @@
-"""A 端实时入口 v0.1.1。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.2.0。运行 python live_monitor.py --help。"""
 import argparse
-from collections import deque
 import csv
 from hmac import compare_digest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
 from contract import RESULT_COLUMNS, parse_result_row, read_json, recording_id, validate_algorithm
 from offline_state_machine import StateMachine, validate_config
+from live_feedback import LiveFeedback
 
 DEMO_ID = "20261103_PDEMO_S01_lifecycle_01"
 DEMO = ROOT.parent / "DEMO_ONLY" / "release_demo" / DEMO_ID / f"{DEMO_ID}_result.csv"
@@ -43,7 +43,7 @@ class LiveMonitor:
         self.lock, self.stop = Lock(), Event()
         self.worker = None
         self.latest, self.received_at = None, None
-        self.events = deque(maxlen=50)
+        self.feedback = LiveFeedback(config, speed)
         self.phase = "waiting"
 
     def push(self, payload):
@@ -58,11 +58,11 @@ class LiveMonitor:
             row = parse_result_row(fields, self.algorithm, "live input", expected + 2)
             validate_position(row, expected, previous)
             now = monotonic()
-            interrupted = (self.replay_rows is None and previous is not None and
-                           now - self.received_at > self.config["data_gap_s"])
+            self.feedback.observe_silence(previous, self.received_at, now, self.phase)
+            interrupted = self.replay_rows is None and self.feedback.interrupted
             self.machine.step(row, interrupted=interrupted)
             self.latest = self.machine.timeline.pop()
-            self.events.extend(self.machine.events)
+            self.feedback.accept(previous, self.latest, row, self.machine.events)
             self.machine.events.clear()
             del self.machine.sessions[:-1]
             self.received_at, self.phase = now, "receiving"
@@ -84,11 +84,10 @@ class LiveMonitor:
             if self.replay_rows is not None and self.worker is None:
                 self.worker = Thread(target=self.replay, daemon=True)
                 self.worker.start()
-            age = None if self.received_at is None else monotonic() - self.received_at
-            phase = self.phase
-            limit = self.config["data_gap_s"] / self.speed
-            if phase == "receiving" and age > limit:
-                phase = "interrupted"
+            now = monotonic()
+            age = None if self.received_at is None else now - self.received_at
+            self.feedback.observe_silence(self.latest, self.received_at, now, self.phase)
+            phase = "interrupted" if self.phase == "receiving" and self.feedback.interrupted else self.phase
             state = self.latest
             available = bool(phase == "receiving" and state and not state["occupancy_pending"]
                              and not state["review_required"] and state["occupancy_state"] in ("idle", "released"))
@@ -98,8 +97,10 @@ class LiveMonitor:
                         algorithm_version=self.algorithm["algorithm_version"],
                         capabilities=[key for key, enabled in self.algorithm["capabilities"].items() if enabled],
                         nominal_time=self.nominal_period is not None, state=state,
-                        silence_review=phase == "interrupted" and age >= self.config["review_after_s"] / self.speed,
-                        events=list(self.events))
+                        silence_review=self.feedback.review, last_frame_age_s=age,
+                        parameter_version=self.algorithm["parameter_version"], config=self.config,
+                        known_issues=self.algorithm.get("known_issues", []),
+                        evidence=self.feedback.evidence, events=list(self.feedback.events))
 
 
 def handler_for(monitor, token):

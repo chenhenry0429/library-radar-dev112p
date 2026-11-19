@@ -1,0 +1,14 @@
+{
+  "algorithm_version": "M2 v0.1 (gated baseline)",
+  "model_version": "M2-v0.1",
+  "description": "M2 posture v0.1: reference calibration + centroid/energy features + contrast quality gate + threshold classification with reject guards. On current T01 hardware data the person signature is buried under TX leakage; the contrast gate is expected to reject classification (posture=unknown, calibration_status=invalid) on all current dev recordings. Gate parameters are the enforceable form of the dev-set diagnostics (posture_v01_diagnostics.md).",
+  "settle_s": 10.0,
+  "ref_frames": 50,
+  "next_frames": 50,
+  "wait_max_s": 30.0,
+  "contrast_factor": 2.0,
+  "centroid_threshold_bins": 0.02,
+  "sump_ratio_lo": 0.5,
+  "sump_ratio_hi": 2.5,
+  "margin_bins": 2
+}

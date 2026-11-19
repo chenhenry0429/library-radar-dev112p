@@ -4,7 +4,7 @@
 用法：
     python detect.py --recording <path/to/<rid>_raw.npz | 目录>
                      [--algorithm M1|B0] [--config <json>] [--region-params <json>]
-                     [--out <dir>] [--emit-scores] [--strict]
+                     [--posture-config <json>] [--out <dir>] [--emit-scores] [--strict]
 
 行为（设计文档 §10）：
   * 目录输入 = 批处理目录内全部 *_raw.npz（按名排序）。
@@ -12,6 +12,10 @@
   * 轴规整：按 meta.axis_order 转置为 [frame,(channel),(doppler),range]；channel 非相干功率合并。
   * M1 允许 2dfft 输入（doppler 功率合并 → 实数退化模式，低可靠、如实记录）；
     B0 需 doppler 轴（1dfft → 报错）。
+  * --posture-config（仅 M1）：加载 M2 姿态 v0.1 管线填充 posture/posture_confidence/
+    calibration_status 列（gated baseline：参考标定 + 特征 + 对比度质量门 + 拒识；
+    门失败时 posture 全程 unknown、cal=invalid，原因写 algorithm.json notes）。
+    缺省不加载 → posture 列保持接口占位（unknown / not_applicable）。
   * 输出 <rid>_result.csv + <rid>_algorithm.json（与输入同目录或 --out）；
     timestamp 用 repr(float) 保证 float64 往返；写盘后立即 selfcheck，FAIL → 非零退出。
   * --emit-scores 另写辅助文件 <rid>_scores.csv（非接口文件，仅分析用）。
@@ -28,6 +32,7 @@ import numpy as np
 
 from algos.m1_features import run_m1
 from algos.b0_pointcloud import run_b0
+from algos.m2_posture import run_m2
 from algos.region import load_region_params
 from algos.selfcheck import check_result_csv
 
@@ -109,19 +114,26 @@ def _fmt_conf(c):
     return "" if c is None else repr(float(c))
 
 
-def build_rows(fids, ts, presence, conf, target_count, quality):
+def build_rows(fids, ts, presence, conf, target_count, quality,
+               posture_out=None, posture_conf_out=None, calib_out=None):
+    """posture_out 为 None → 接口占位（v1 缺省）；否则用 M2 v0.1 输出。"""
     rows = []
     for i in range(len(fids)):
         pr = int(presence[i])
+        if posture_out is None:
+            po = "not_applicable" if pr == 0 else "unknown"
+            poc, cal = "", "uncalibrated"
+        else:
+            po, poc, cal = posture_out[i], posture_conf_out[i], calib_out[i]
         rows.append([
             int(fids[i]),
             repr(float(ts[i])),
             pr,
             _fmt_conf(conf[i]),
             int(target_count[i]),
-            "not_applicable" if pr == 0 else "unknown",
-            "",
-            "uncalibrated",
+            po,
+            poc,
+            cal,
             quality[i],
         ])
     return rows
@@ -217,6 +229,23 @@ def process_recording(npz_path, args, region_params):
         # 版本标签可由 config 覆盖（默认保持 v1.1；v1.2 snapshot 配置需正确标识）
         algorithm_version = str((cfg or {}).get("algorithm_version", "M1 v1.1"))
         model_version = str((cfg or {}).get("model_version", "M1-v1.1"))
+        # ---- M2 姿态 v0.1（可选，--posture-config）----
+        posture_out = posture_conf_out = calib_out = None
+        posture_enabled = False
+        posture_gate_pass = None
+        if getattr(args, "posture_config", None):
+            m2_cfg = load_json(args.posture_config)
+            m2 = run_m2(X, ts, presence, quality, m2_cfg, result["region"])
+            posture_out = m2["posture"]
+            posture_conf_out = m2["posture_conf"]
+            calib_out = m2["calib_status"]
+            posture_enabled = True
+            posture_gate_pass = bool(m2["gate_pass"])
+            notes.append(
+                "posture: M2 v0.1 gated baseline; gate_pass="
+                f"{m2['gate_pass']}; " + " | ".join(m2["notes"]))
+            algorithm_version = algorithm_version + " + M2 v0.1 (gated)"
+            model_version = model_version + "+M2-v0.1"
     elif algorithm == "B0":
         if not has_doppler:
             raise ValueError("B0 requires a doppler axis (2dfft); use --algorithm M1 for 1dfft input")
@@ -242,7 +271,9 @@ def process_recording(npz_path, args, region_params):
     csv_path = os.path.join(out_dir, f"{rid}_result.csv")
     algo_path = os.path.join(out_dir, f"{rid}_algorithm.json")
 
-    write_result_csv(csv_path, build_rows(fids, ts, presence, conf, target_count, quality))
+    write_result_csv(csv_path, build_rows(fids, ts, presence, conf, target_count,
+                                           quality, posture_out, posture_conf_out,
+                                           calib_out))
 
     effective = {
         "algorithm": algorithm,
@@ -252,13 +283,28 @@ def process_recording(npz_path, args, region_params):
         "degraded_input": degraded_input,
         "region": {k: result["region"][k] for k in ("lo", "hi", "main_bin", "source")},
     }
+    if posture_enabled:
+        effective["posture_config"] = load_json(args.posture_config)
+        effective["posture_gate_pass"] = posture_gate_pass
     with open(algo_path, "w", encoding="utf-8") as f:
         json.dump({
             "schema_version": "1.0",
             "recording_id": rid,
             "algorithm_version": algorithm_version,
             "parameter_version": md5_8(effective),
-            "capabilities": {"presence": True, "posture": False},
+            "capabilities": {
+                "presence": True,
+                "posture": posture_enabled,
+                "posture_semantics": (
+                    "M2 v0.1 gated baseline: pipeline implemented (reference "
+                    "calibration, centroid/energy features, contrast quality "
+                    "gate, threshold classification with reject guards). "
+                    "posture=true means the pipeline ran; recordings failing "
+                    "the contrast gate output posture=unknown with "
+                    "calibration_status=invalid for all occupied frames "
+                    "(explicit rejection, not placeholder). See notes."),
+
+            },
             "config": effective,
             "window_s": window_s,
             "smoothing": smoothing,
@@ -303,6 +349,9 @@ def main():
     ap.add_argument("--algorithm", choices=["M1", "B0"], default=None,
                     help="default: inferred from meta.data_level (1dfft->M1, 2dfft->B0)")
     ap.add_argument("--config", default=None, help="algorithm config JSON override")
+    ap.add_argument("--posture-config", default=None,
+                    help="M1 only: M2 posture v0.1 config JSON; enables posture "
+                         "pipeline (gated baseline with explicit rejection)")
     ap.add_argument("--region-params", default=os.path.join(CONFIG_DIR, "region_params_v0.1.json"))
     ap.add_argument("--out", default=None, help="output dir (default: beside input npz)")
     ap.add_argument("--emit-scores", action="store_true",

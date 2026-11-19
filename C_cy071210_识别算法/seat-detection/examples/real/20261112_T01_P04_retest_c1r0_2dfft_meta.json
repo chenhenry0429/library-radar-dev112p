@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "20261112_T01_P04_retest_c1r0_2dfft",
+  "seat_id": "T01",
+  "subject_id": "P04",
+  "session_id": "R01",
+  "source_kind": "measured",
+  "capture_start": "2026-11-12T21:58:20+08:00",
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": "derived: frame_id x nominal_frame_period (0.1935 s) from first captured frame group (frame 0 may be partial); not wall-clock aligned; raw .dat write window 21:58:20-21:59:58 per field log; pending confirmation with B-side acquisition (Chen Zhixuan)",
+  "data_level": "2dfft",
+  "raw_shape": [
+    504,
+    64,
+    8
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "doppler_bin",
+    "range_bin"
+  ],
+  "value_unit": "device_fft_counts",
+  "iq_representation": "complex64 I/Q (device 2dfft output, zero-filled missing chirps in partial frames 0/503); no DC removal applied",
+  "nominal_frame_rate_hz": 5.167958656330749,
+  "radar_config": {
+    "nominal_frame_period_s": 0.1935,
+    "nominal_frame_rate_hz": 5.167958656330749,
+    "range_bin_distance_m": null,
+    "tx_polling": 1,
+    "n_range_bins": 8,
+    "n_doppler_bins": 64,
+    "doppler_dc_index": 0,
+    "source_archive": {
+      "format": "dev112p_decoded_1dfft_archive",
+      "archive_version": 1,
+      "recording_id": "T01_P04_retest",
+      "device_model": "DEV112P",
+      "raw_shape": [
+        504,
+        2,
+        2,
+        64,
+        8,
+        2
+      ],
+      "raw_dtype": "int16"
+    },
+    "postprocess": {
+      "chip_rx_selected": [
+        1,
+        0
+      ],
+      "chirp_merge": "64-point FFT over chirp axis, DC at doppler bin 0 (no fftshift); missing chirps zero-filled"
+    },
+    "note": "derived from B-side dev112p archive; chip/rx selection and chirp merge are lossy projections, see postprocess"
+  },
+  "installation": {
+    "position": "field trial seat T01; no geometric calibration (range bins uncalibrated); radar-to-chest ~60 cm per field log note, unverified",
+    "height_m": null,
+    "angle_deg": null,
+    "region_m": null,
+    "region_bins": [
+      1,
+      3
+    ],
+    "main_bin": 2,
+    "plan": null
+  },
+  "capture_notes": "B-side stopwatch is operator-click origin; radar-stopwatch time alignment NOT measured, event times are approximate references only (plan_is_ground_truth=false in source archive). chip1/rx0 selected, same chain as P01 pilot calibration; chip0 bin0 int16 saturation was observed on the P01 archive and was not re-measured per recording here. Range bins not calibrated to meters; region_bins/main_bin are per-seat signal calibrations shared with P01 (same seat T01, same device config) pending geometric survey. 504 frame groups, 502 complete; partial frames 0 (212/256 packets) and 503 (72/256) per B-side archive integrity block. B-side stopwatch events (operator-click origin, alignment to radar nominal time NOT measured): 20.33 first seated, 38.04 leaned back, 57.39 first walk-away, 70.67 returned seated, 86.51 second walk-away. Evaluation pending alignment confirmation; treat presence timing as debug until then."
+}

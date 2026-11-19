@@ -105,9 +105,11 @@ class StateMachine:
             return -1
         return row["presence"]
 
-    def step_occupancy(self, p, gap, dt):
+    def step_occupancy(self, p, gap, dt, *, interrupted=False):
         if gap:
-            self.emit("data_gap", self.state, self.state, f"gap {dt!r}s exceeds {self.c['data_gap_s']!r}s; entire interval excluded")
+            reason = ("frame delivery resumed after interruption; evidence must be reconfirmed"
+                      if interrupted else f"gap {dt!r}s exceeds {self.c['data_gap_s']!r}s; entire interval excluded")
+            self.emit("data_gap", self.state, self.state, reason)
             self.evidence = self.evidence_since = None
             self.needs_confirm = True
             self.gap_wait_reset = True
@@ -237,11 +239,11 @@ class StateMachine:
             return effective, "reminded"
         return effective, "accumulating" if cooled else "cooldown"
 
-    def step(self, row):
+    def step(self, row, *, interrupted=False):
         self.t, self.fid = row["timestamp"], row["frame_id"]
         dt = 0.0 if self.prev_t is None else self.t - self.prev_t
-        gap = dt > self.c["data_gap_s"]
-        self.step_occupancy(self.evidence_value(row), gap, dt)
+        gap = self.prev_t is not None and (interrupted or dt > self.c["data_gap_s"])
+        self.step_occupancy(self.evidence_value(row), gap, dt, interrupted=interrupted)
         cal, remind = self.step_posture(row, gap, dt)
         self.timeline.append(dict(frame_id=self.fid, timestamp=self.t, seat_id=self.meta["seat_id"],
             session_id=self.session, occupancy_state=self.state, occupancy_pending=int(self.pending),

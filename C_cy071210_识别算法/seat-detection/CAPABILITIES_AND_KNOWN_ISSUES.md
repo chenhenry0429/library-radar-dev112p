@@ -15,6 +15,10 @@
 | 姿态分类在当前数据上输出 | ❌ **11/12 组拒识（unknown/invalid）**；P01 过门但方向不可验证 | §4.2；posture_v01_diagnostics.md |
 | 合成数据自测（G1） | ✅ 20/20 PASS（合成域） | README「G1 自测流程」 |
 | 批量预测 + 契约校验 | ✅ 12/12 组 result.csv C1–C8 PASS | §5；`algos/selfcheck.py` |
+| **在线逐帧入口（v0.1）** | ✅ 已实现：`SeatDetector` 逐帧喂入，12 组回放与离线**逐字节一致**；B 单帧投影与离线适配器**字节等价** | §2.5；`algos/online_detector.py`；`tools/live_seat.py` |
+| 在线姿态 | ❌ v0.1 为接口占位（not_applicable/unknown + uncalibrated，与离线无 `--posture-config` 一致）；M2 在线化（回填语义）未排期 | §2.5 |
+| 在线 2dfft/B0 | ❌ v0.1 仅 1dfft（M1）；`SeatDetector` 显式拒收 2dfft | §2.5 |
+| B↔C 帧级契约 | ⏳ 提案已发（DevFrame/零掩码丢帧/握手 meta），待 B 确认 | 仓库 `对接事宜/2026-11-19_B-C帧级接口提案.md` |
 | dsraw 直读 | ❌ 不支持（待 DS10012RN 协议，不猜测未知格式） | detect.py 显式报错 |
 | bin-距离标定 | ❌ 未标定（region 用几何先验名义值） | metadata_gaps.md |
 
@@ -29,6 +33,16 @@
 5. **契约自检**：写盘后立即跑 selfcheck C1–C8，FAIL 即非零退出。
 
 v1.2 快照（`config/M1_dev112p_v0.2.json`）为团队冻结配置，与 v1.1 的差异是 f1 绝对 dB 映射按真实数据重标。
+
+## 2.5 在线逐帧入口 v0.1（2026-11-19 交付）
+
+`run_m1` 重构为逐帧状态机（`make_m1_state`/`_m1_step`，**离线 run_m1 与在线 SeatDetector 共用同一代码路径**），其上交付连续会话入口：
+
+- **会话语义**：`SeatDetector` 一次会话一个实例；frame_id 0 起严格连续（跳号=协议错乱即报错，A 契约同款）；timestamp 严格递增；`feed_frame`（已投影剖面）/`feed_dev112p`（B 单帧立方，C 侧 `project_dev112p_frame` 投影）→ 九字段行 dict。
+- **无效帧语义**：零有效 chirp 帧输出 `invalid_frame` 行（presence=-1、target_count=-1），**不推进识别状态机**（NaN 剖面会永久毒化 unwrap 相位链）；建议 B 用全零掩码帧显式表达丢帧/坏帧（提案待确认）。
+- **能力占位**：posture=not_applicable（无人）/unknown（有人）、calibration_status=uncalibrated——与离线不带 `--posture-config` 逐字段一致；在线 capabilities 声明 `{"presence": true, "posture": false}`。
+- **验证证据**（三层）：① 12 组 T01 逐帧喂入 vs 离线 detect.py（同 v1.2 配置、无姿态分支）result.csv + scores.csv **逐字节一致**；② 单帧投影 vs 离线适配器 `chirp_mean` **字节等价**（全有效/15% 缺 chirp/单有效 chirp/int16 极值/chip0-rx1 交叉选路 + 零 chirp 与越界守卫）；③ POST 转发链路 stub 冒烟 113 帧串行通过（九字段键、0 起连续 id、严格递增 ts、null 姿态置信）。
+- **边界**：仅 1dfft；帧周期必须显式（会话 meta `nominal_frame_period_s`=0.1935，不用 1/5.168 近似——F3 频率映射会漂移）；回放回归用 `median(diff(ts))` 对齐离线。
 
 ## 3. M2 姿态管线 v0.1（gated baseline，对应组员要求④）
 
@@ -90,6 +104,12 @@ python detect.py --recording examples/real/<rid>_raw.npz --config config/M1_dev1
 
 # 批量（目录输入自动遍历 *_raw.npz；写盘后自动 selfcheck，FAIL 非零退出）
 python detect.py --recording examples/real --config config/M1_dev112p_v0.2.json --emit-scores
+
+# 在线回放回归（vs 离线无姿态分支输出，逐字节比对）
+python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <dir> --emit-scores --expect <离线输出目录>
+
+# 在线逐帧转发 A（串行 POST；A 契约见 A README_实时入口）
+python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN>
 ```
 
 输入为 dsraw 归档时先转换：`python tools/dev112p_adapter.py <dsraw目录>`（chip1/rx0、region [1,3] main_bin 2）。
@@ -100,4 +120,6 @@ python detect.py --recording examples/real --config config/M1_dev112p_v0.2.json 
 - round-2 缺陷分析：`outputs/t01-round2/v1.2_round2_defect_analysis.md`
 - 姿态诊断（三路线否决证据 + 补采清单）：`outputs/posture-v01/posture_v01_diagnostics.md`
 - 元信息缺项：`outputs/t01-devset-validation/metadata_gaps.md`
+- B↔C 帧级接口提案（在线 v0.1，待 B 确认）：仓库 `对接事宜/2026-11-19_B-C帧级接口提案.md`
+- A 实时入口契约：归档 `A_stone140_应用与业务/README_实时入口.md`
 - 接口规范 v1：归档 `C_cy071210_识别算法/`（posture/calibration_status 词表以 `algos/selfcheck.py` 为权威实现）

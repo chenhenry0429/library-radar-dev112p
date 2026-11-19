@@ -30,6 +30,18 @@
       动机（T01/P01 实测 §4）：EMA 吸收入座者（α=0.2 → 静坐 72 s 才触发）
       或滞后漂移（α=0.02 → 空座全程 FP）；冻结快照使空座残差与有人残差在
       bin1/bin3 组合上间隔 ≥3.4 dB。前提：录制开始时座位为空（或含空座引导段）
+
+架构（在线化重构，行为逐字节不变）：
+  * 全部跨帧状态封装为 M1State；逐帧推进为 _m1_step(state, Xt, ts_t)。
+  * 离线 run_m1 = 构建 state + 循环调用 _m1_step；在线 SeatDetector
+    （algos/online_detector.py）同样调用 _m1_step——同一代码路径保证离线/在线一致。
+  * 原实现中 main_unw = np.unwrap(全序列) 在锁定主 bin 时一次性构建；np.unwrap
+    是顺序递推（任意前缀与全序列前缀逐位一致），改为逐帧对原始相位全链重算，
+    浮点行为与原实现完全一致（std 对窗口局部 unwrap 的近似方案会引入累计偏移
+    的舍入差异，已弃用）。相位链含全部帧（含 invalid/low_signal 早退帧），
+    与原实现对全序列 unwrap 的行为一致。
+  * F3 的 dt_med 由调用方传入（离线 = median(diff(ts))；在线 = 会话帧周期），
+    均匀时戳下二者相等。
 """
 import numpy as np
 
@@ -48,7 +60,7 @@ _DEFAULTS = {
     "f3_denominator": "total",   # 'non_static': 排除 DC bin（真实设备动静比 60+ dB 时用）
     "f4_jump_db": 12.0,
     "background": {"alpha": 0.2, "mode": "ema",
-                   "snapshot_frames": 50, "re_snapshot_confirm": 90},
+                    "snapshot_frames": 50, "re_snapshot_confirm": 90},
     "confidence": {"warmup_cap": 0.80},
     "hysteresis_confirm_frames": 5,
     "static_gate": {"f23_floor": 0.10},
@@ -69,6 +81,13 @@ def _cfg_get(cfg, path, default):
 def _window_lo(ts, t, win_s, lo):
     """推进窗口左端：保持 ts[t] - ts[lo] < win_s（1 Hz、4 s 窗 → 恰好 4 样本，与 demo 等价）。"""
     while lo < t and ts[t] - ts[lo] >= win_s:
+        lo += 1
+    return lo
+
+
+def _window_lo_hist(ts_hist, t, win_s, lo):
+    """与 _window_lo 相同的推进逻辑，但作用于 list 时间戳历史（在线路径共用）。"""
+    while lo < t and ts_hist[t] - ts_hist[lo] >= win_s:
         lo += 1
     return lo
 
@@ -106,33 +125,42 @@ def presence_from_scores(scores, t_on, t_off, confirm_frames=1, static_flag=None
     return out
 
 
-def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
-    """M1 主入口。
+class M1State:
+    """M1 逐帧状态（离线 run_m1 与在线 SeatDetector 共用；严格因果）。
 
-    参数
-    ----
-    raw_data : array [N, range]
-        已轴规整的距离剖面（复数=完整模式；实数=退化模式）。2dfft 的 doppler 合并
-        由 detect.py 完成后再传入。
-    timestamps : float64 [N]
-    meta : dict（<rid>_meta.json 内容）
-    cfg : dict 或 None（config/M1_default.json 内容，None 用内置默认）
-    region_params : dict 或 None
-
-    返回
-    ----
-    dict: presence(int[N]), conf(list[float|None]), quality(list[str]),
-          score/f1n/f2n/f3n/f4n/gate(float[N]), region(dict), degraded(bool),
-          warnings(list[str]), state_trace(int[N])
+    构造参数 region/nb/complex_input/dt_med 由调用方判定后传入：
+      * 离线：nb/complex_input 取自全量数组，dt_med = median(diff(ts))。
+      * 在线：nb 取自会话 meta（raw_shape[-1]），complex_input 取自首帧，
+        dt_med 取自会话帧周期（B 侧提供；均匀时戳下与离线 median 一致）。
     """
-    cfg = cfg or {}
-    X = np.asarray(raw_data)
-    if X.ndim == 1:
-        X = X[:, None]
-    n, nb = X.shape
-    ts = np.asarray(timestamps, dtype=np.float64)
 
-    # ---- 参数（含回退） ----
+    __slots__ = (
+        # 参数（_resolve_params 解析后传入）
+        "w1", "w2", "w3", "w4", "t_on", "t_off",
+        "win_gate", "win_f2", "win_f3", "warmup_s",
+        "f1_lo", "f1_hi", "f2_norm", "band_lo", "band_hi", "f3_gain", "f3_denom",
+        "f4_jump", "f1_bins", "alpha", "bg_mode", "snap_frames", "re_snap_confirm",
+        "warmup_cap", "confirm", "f23_floor", "low_floor",
+        # 环境
+        "region", "lo_r", "hi_r", "nb", "complex_input", "dt_med", "degraded",
+        # 输出轨迹（list；离线最后转 ndarray 打包）
+        "presence", "conf", "quality", "f1n", "f2n", "f3n", "f4n",
+        "gate", "score", "f23_win",
+        # 滑窗与历史
+        "ts_hist", "x_hist", "f23s_hist",
+        "lo_gate", "lo_f2", "lo_f3", "active_sum",
+        # 背景/快照
+        "bg", "snap_acc", "snap_cnt", "snap_frozen", "snap_events", "empty_run",
+        # 滞回/主bin/相位链
+        "state", "cand", "cand_state", "prev_f1_db",
+        "main_bin", "main_locked", "warmup_power", "raw_ang_hist",
+        # 其他
+        "warnings",
+    )
+
+
+def _resolve_params(cfg):
+    """解析 config（缺失回退默认）；返回 dict。与旧 run_m1 逐项一致。"""
     w1 = float(_cfg_get(cfg, ["weights", "f1_residual"], _DEFAULTS["weights"]["f1_residual"]))
     w2 = float(_cfg_get(cfg, ["weights", "f2_phase_std"], _DEFAULTS["weights"]["f2_phase_std"]))
     w3 = float(_cfg_get(cfg, ["weights", "f3_breath_band"], _DEFAULTS["weights"]["f3_breath_band"]))
@@ -164,230 +192,318 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
                                           _DEFAULTS["background"]["re_snapshot_confirm"])))
     warmup_cap = float(_cfg_get(cfg, ["confidence", "warmup_cap"], _DEFAULTS["confidence"]["warmup_cap"]))
     confirm = max(1, int(_cfg_get(cfg, ["hysteresis_confirm_frames"],
-                                 _DEFAULTS["hysteresis_confirm_frames"])))
+                                  _DEFAULTS["hysteresis_confirm_frames"])))
     f23_floor = float(_cfg_get(cfg, ["static_gate", "f23_floor"],
                                _DEFAULTS["static_gate"]["f23_floor"]))
     low_db = float(_cfg_get(cfg, ["quality", "low_signal_db"], _DEFAULTS["quality"]["low_signal_db"]))
-    low_floor = 10.0 ** (low_db / 10.0)
+    return {
+        "w1": w1, "w2": w2, "w3": w3, "w4": w4, "t_on": t_on, "t_off": t_off,
+        "win_gate": win_gate, "win_f2": win_f2, "win_f3": win_f3,
+        "warmup_s": warmup_s, "f1_lo": f1_lo, "f1_hi": f1_hi, "f2_norm": f2_norm,
+        "band_lo": band_lo, "band_hi": band_hi, "f3_gain": f3_gain,
+        "f3_denom": f3_denom, "f4_jump": f4_jump, "f1_bins": f1_bins,
+        "alpha": alpha, "bg_mode": bg_mode, "snap_frames": snap_frames,
+        "re_snap_confirm": re_snap_confirm, "warmup_cap": warmup_cap,
+        "confirm": confirm, "f23_floor": f23_floor,
+        "low_floor": 10.0 ** (low_db / 10.0),
+    }
 
+
+def make_m1_state(cfg, meta, region_params, nb, complex_input, dt_med):
+    """构建 M1State（离线/在线共用）。区域解析与退化处理在此一次完成。"""
+    prm = _resolve_params(cfg or {})
+    st = M1State()
+    for k, v in prm.items():
+        setattr(st, k, v)
     region = resolve_region(meta, region_params, nb)
-    lo_r, hi_r = region["lo"], region["hi"]
-    warnings = list(region["warnings"])
+    st.region = region
+    st.lo_r, st.hi_r = int(region["lo"]), int(region["hi"])
+    st.nb = int(nb)
+    st.complex_input = bool(complex_input)
+    dt_med = float(dt_med) if dt_med else 1.0
+    st.dt_med = dt_med if dt_med > 0 else 1.0
+    st.degraded = not st.complex_input
 
-    complex_input = bool(np.iscomplexobj(X))
-    degraded = not complex_input
-    if degraded:
-        warnings.append(
+    if st.degraded:
+        st.warnings = list(region["warnings"]) + [
             "real-valued input: phase features unavailable -> "
-            "F2/F3 disabled, weights renormalized over (F1,F4), no gate")
-        w2 = w3 = 0.0
-        active = w1 + w4
+            "F2/F3 disabled, weights renormalized over (F1,F4), no gate"]
+        st.w2 = 0.0
+        st.w3 = 0.0
+        active = st.w1 + st.w4
         if active <= 0:
-            warnings.append("all active weights are zero -> falling back to F1-only")
-            w1, active = 1.0, 1.0
-        f23_floor = None  # 静态门依赖相位特征，退化输入禁用
+            st.warnings.append("all active weights are zero -> falling back to F1-only")
+            st.w1, active = 1.0, 1.0
+        st.active_sum = active  # 构造期归一化分母（与原实现 active 局部变量一致）
+        st.f23_floor = None  # 静态门依赖相位特征，退化输入禁用
+    else:
+        st.warnings = list(region["warnings"])
+        st.active_sum = 0.0  # 非退化模式不使用
 
-    # ---- 主 bin 解析（退化全距离时：warmup 期结束前用累计能量锁定，保持因果） ----
-    main_bin = region["main_bin"]
-    main_locked = main_bin is not None
-    if main_bin is None:
-        warnings.append("main_bin is None (full-range degraded): locking per accumulated "
-                        "region power over the warmup window; F2/F3=0 before the lock")
+    st.main_bin = region["main_bin"]
+    st.main_locked = st.main_bin is not None
+    if st.main_bin is None:
+        st.warnings.append("main_bin is None (full-range degraded): locking per accumulated "
+                           "region power over the warmup window; F2/F3=0 before the lock")
 
-    # ---- 状态与轨迹 ----
-    presence = np.zeros(n, dtype=np.int64)
-    quality = ["ok"] * n
-    conf: list = [None] * n
-    f1n = np.zeros(n); f2n = np.zeros(n); f3n = np.zeros(n)
-    f4n = np.zeros(n); gate = np.zeros(n); score = np.zeros(n)
-    f23_win = np.zeros(n)
+    # 输出轨迹
+    st.presence, st.conf, st.quality = [], [], []
+    st.f1n, st.f2n, st.f3n, st.f4n = [], [], [], []
+    st.gate, st.score, st.f23_win = [], [], []
+    # 滑窗与历史
+    st.ts_hist, st.x_hist = [], []
+    st.f23s_hist = []
+    st.lo_gate = st.lo_f2 = st.lo_f3 = 0
+    # 背景/快照
+    st.bg = None  # 首帧初始化为该帧 copy（与离线 bg = X[0].copy() 等价）
+    st.snap_acc = np.zeros(st.nb, dtype=np.complex128 if st.complex_input else np.float64)
+    st.snap_cnt, st.snap_frozen, st.snap_events, st.empty_run = 0, False, 0, 0
+    # 滞回/主bin/相位链
+    st.state, st.cand, st.cand_state = 0, 0, 0
+    st.prev_f1_db = None
+    st.warmup_power = np.zeros(st.nb)
+    st.raw_ang_hist = None  # 主 bin 锁定帧起维护（含回补历史）
+    return st
 
-    bg = X[0].astype(np.complex128 if complex_input else np.float64).copy()
-    # snapshot_freeze 状态（v1.2）：累积器/计数/冻结标志/连续无人帧
-    snap_acc = np.zeros(nb, dtype=np.complex128 if complex_input else np.float64)
-    snap_cnt = 0
-    snap_frozen = False
-    snap_events = 0
-    empty_run = 0
-    state, cand, cand_state = 0, 0, 0
-    lo_gate = lo_f2 = lo_f3 = 0
-    prev_f1_db = None
 
-    # 主 bin 相位序列（锁定后才能算 unwrap；unwrap 本身是顺序因果变换）
-    main_unw = None
+def _m1_step(st, Xt, ts_t):
+    """单帧推进（严格因果；与重构前 run_m1 循环体逐行等价）。
+
+    Xt  : 单帧 range profile [nb]（complex 或 real，须与构造时 complex_input 一致）
+    ts_t: 本帧 timestamp（秒，相对录制/会话起点）
+    """
+    t = len(st.ts_hist)
+    st.ts_hist.append(ts_t)
+    if st.complex_input:
+        Xt = np.asarray(Xt).astype(np.complex128)
+    else:
+        Xt = np.asarray(Xt).astype(np.float64)
+    st.x_hist.append(Xt)
+    if st.bg is None:  # 首帧：与离线 bg = X[0].copy() 等价
+        st.bg = Xt.copy()
+
+    # 相位链维护：主 bin 锁定后每帧记录原始相位（含本帧），锁定帧回补全部历史。
+    # 质量早退帧的相位同样进链（与原实现对全序列 unwrap 的行为一致）。
+    if st.complex_input and st.main_locked:
+        if st.raw_ang_hist is None:
+            st.raw_ang_hist = [float(np.angle(row[st.main_bin])) for row in st.x_hist]
+        else:
+            st.raw_ang_hist.append(float(np.angle(Xt[st.main_bin])))
+
+    # 输出占位（与原实现零初始化一致）
+    st.f1n.append(0.0); st.f2n.append(0.0); st.f3n.append(0.0)
+    st.f4n.append(0.0); st.gate.append(0.0); st.score.append(0.0)
+    st.f23_win.append(0.0)
+    st.presence.append(0)
+    st.conf.append(None)
+    st.quality.append("ok")
+
+    reg = Xt[st.lo_r:st.hi_r + 1]
+
+    # ---- 质量判定 ----
+    finite_reg = np.all(np.isfinite(reg)) and np.all(np.isfinite(reg.real))
+    mean_power = float(np.mean(np.abs(reg.astype(np.complex128)) ** 2)) if finite_reg else 0.0
+    if not finite_reg or mean_power < st.low_floor:
+        if not finite_reg:
+            st.quality[t] = "invalid_frame"
+        else:
+            st.quality[t] = "low_signal"
+        st.presence[t] = -1
+        st.conf[t] = None
+        st.score[t] = 0.0
+        st.f23s_hist.append(st.f2n[t] + st.f3n[t])
+        return
+
+    # ---- main_bin 未锁定的退化路径：warmup 期累计，锁死后固定 ----
+    if st.main_bin is None:
+        st.warmup_power += np.abs(Xt.astype(np.complex128)) ** 2
+        if ts_t >= st.warmup_s and not st.main_locked:
+            st.main_bin = int(np.argmax(st.warmup_power[st.lo_r:st.hi_r + 1])) + st.lo_r
+            st.main_locked = True
+            # 锁定帧：回补历史相位链（原实现对全序列 unwrap 的等价前缀）
+            st.raw_ang_hist = [float(np.angle(row[st.main_bin])) for row in st.x_hist]
+
+    # ---- F1：区域残差能量（背景去除后） ----
+    resid_full = reg.astype(np.complex128) - st.bg[st.lo_r:st.hi_r + 1].astype(np.complex128)
+    if st.f1_bins == "non_main" and st.main_locked:
+        # v1.2 真机模式：排除主 bin——空座环境低频相位扰动集中于主 bin，
+        # 人体静态反射分布在侧 bin（T01/P01 probe2/3 实测：主 bin 空座/有人
+        # 分布重叠，侧 bin max(b1,b3) 间隔 ≥3.4 dB）。主 bin 仍由 F2/F3 监测。
+        resid = np.delete(resid_full, st.main_bin - st.lo_r)
+    else:
+        resid = resid_full
+    f1 = float(np.sum(np.abs(resid) ** 2))
+    f1_db = 10.0 * np.log10(f1 + 1e-12)
+    st.f1n[t] = np.clip((f1_db - st.f1_lo) / (st.f1_hi - st.f1_lo), 0.0, 1.0)
+    st.f4n[t] = 0.0 if st.prev_f1_db is None else float(
+        np.clip(abs(f1_db - st.prev_f1_db) / st.f4_jump, 0.0, 1.0))
+    st.prev_f1_db = f1_db
+
+    # ---- F2/F3：主 bin 相位与频段（复数且已锁定主 bin 才有） ----
+    if st.complex_input and st.main_locked:
+        # 全链重算 unwrap（顺序递推前缀一致；窗口局部 unwrap 会引入累计偏移舍入差，不可用）
+        main_unw = np.unwrap(np.asarray(st.raw_ang_hist))
+        lo_f2 = _window_lo_hist(st.ts_hist, t, st.win_f2, st.lo_f2)
+        st.lo_f2 = lo_f2
+        seg = main_unw[lo_f2:t + 1]
+        if len(seg) >= 2:
+            st.f2n[t] = float(np.clip(np.std(seg) / st.f2_norm, 0.0, 1.0))
+        lo_f3 = _window_lo_hist(st.ts_hist, t, st.win_f3, st.lo_f3)
+        st.lo_f3 = lo_f3
+        z = np.asarray([row[st.main_bin] for row in st.x_hist[lo_f3:t + 1]])
+        if len(z) >= 2:
+            Z = np.fft.fft(z) / len(z)
+            freqs = np.fft.fftfreq(len(z), d=st.dt_med)
+            band_mask = (np.abs(freqs) >= st.band_lo) & (np.abs(freqs) < st.band_hi)
+            if np.any(band_mask):
+                denom = np.sum(np.abs(Z) ** 2)
+                if st.f3_denom == "non_static":
+                    # 真实设备模式：静态杂波 DC 主导总分母（60+ dB 动静比），
+                    # 占比结构性趋零；排除 DC bin 后衡量"非静态能量中的呼吸占比"
+                    denom -= float(np.abs(Z[0]) ** 2)
+                ratio = float(np.sum(np.abs(Z[band_mask]) ** 2) /
+                             (denom + 1e-12))
+                st.f3n[t] = float(np.clip(ratio * st.f3_gain, 0.0, 1.0))
+
+    # ---- 滑窗历史（先于 gate：f23_win 窗口含本帧，与原实现 (f2n+f3n)[lo_gate:t+1] 一致；
+    #      gate 窗口直接读 f1n 轨迹，t+1 元素含本帧） ----
+    st.f23s_hist.append(st.f2n[t] + st.f3n[t])
+
+    # ---- gate 与得分 ----
+    lo_gate = _window_lo_hist(st.ts_hist, t, st.win_gate, st.lo_gate)
+    st.lo_gate = lo_gate
+    st.gate[t] = float(np.mean(np.asarray(st.f1n[lo_gate:t + 1])))
+    if st.complex_input and st.main_locked:
+        # 静态门证据：4 s 窗 (F2n+F3n) 均值（呼吸微动是否存在）
+        st.f23_win[t] = float(np.mean(np.asarray(st.f23s_hist[lo_gate:t + 1])))
+    if st.degraded:
+        st.score[t] = (st.w1 * st.f1n[t] + st.w4 * st.f4n[t]) / st.active_sum
+    else:
+        st.score[t] = st.w1 * st.f1n[t] + st.gate[t] * (
+            st.w2 * st.f2n[t] + st.w3 * st.f3n[t] + st.w4 * st.f4n[t])
+
+    # ---- 双阈值滞回（confirm 帧防抖 + 静态门；confirm=1 等价 demo 即时翻转） ----
+    s = st.score[t]
+    static = st.f23_floor is not None and st.main_locked and st.f23_win[t] < st.f23_floor
+    if static:
+        want = 0
+    elif s >= st.t_on:
+        want = 1
+    elif s <= st.t_off:
+        want = 0
+    else:
+        want = st.state
+    if want != st.state:
+        if want == st.cand_state:
+            st.cand += 1
+        else:
+            st.cand_state, st.cand = want, 1
+        if st.cand >= st.confirm:
+            st.state, st.cand = want, 0
+    else:
+        st.cand = 0
+    st.presence[t] = st.state
+
+    # ---- 置信度（demo 公式；warmup 封顶） ----
+    c = float(np.clip(0.5 + 0.49 * abs(2.0 * s - 1.0), 0.5, 0.99))
+    if ts_t < st.warmup_s:
+        c = min(c, st.warmup_cap)
+    st.conf[t] = c
+
+    # ---- 背景更新：判决之后（因果） ----
+    if st.bg_mode == "ema":
+        # v1.1 原逻辑：仅无人帧 EMA 更换（保持行为完全不变）
+        if st.state == 0:
+            st.bg = (1.0 - st.alpha) * st.bg + st.alpha * Xt
+    else:
+        # v1.2 snapshot_freeze：入座前累积空座快照，检测到占用即冻结；
+        # 释放后累计 re_snapshot_confirm 个「证据级空帧」（score ≤ t_off）→ 重建
+        # 快照（漂移/环境变化自适应）。hysteresis 波峰帧（t_off < score < t_on）
+        # 既不计数也不重置——入座未确认段/空座瞬态波峰不会误触发重建。
+        # 累积期（初始或重建）只吸收证据级空帧：回座未确认的人帧（score > t_off）
+        # 不入快照；冻结可发生在任意 K_eff（K_eff=0 表示保留旧快照）。
+        # bg 在累积期为运行均值（随帧收敛），冻结后完全静止。
+        if st.state == 1:
+            if not st.snap_frozen:
+                st.snap_frozen = True  # 占用确认 → 冻结（部分窗口亦可）
+                st.snap_events += 1
+                if st.snap_cnt > 0:
+                    st.warnings.append(f"background: snapshot #{st.snap_events} frozen "
+                                       f"(K_eff={st.snap_cnt} frames)")
+                else:
+                    st.warnings.append(f"background: snapshot #{st.snap_events} frozen "
+                                       f"(K_eff=0, previous snapshot kept)")
+            st.empty_run = 0
+        else:
+            if not st.snap_frozen:
+                if s <= st.t_off:
+                    st.snap_acc = st.snap_acc + Xt
+                    st.snap_cnt += 1
+                    st.bg = st.snap_acc / st.snap_cnt
+                if st.snap_cnt >= st.snap_frames:
+                    st.snap_frozen = True
+                    st.snap_events += 1
+                    st.warnings.append(f"background: snapshot #{st.snap_events} frozen "
+                                       f"(K_eff={st.snap_cnt} frames)")
+            else:
+                if s <= st.t_off:
+                    st.empty_run += 1
+                if st.empty_run >= st.re_snap_confirm:
+                    # 释放后证据级空帧足够久 → 重建快照
+                    st.snap_frozen = False
+                    st.snap_acc = np.zeros(st.nb,
+                                           dtype=np.complex128 if st.complex_input else np.float64)
+                    st.snap_cnt = 0
+                    st.empty_run = 0
+                    st.warnings.append(f"background: snapshot #{st.snap_events} rebuild "
+                                       f"triggered ({st.re_snap_confirm} empty-evidence frames)")
+
+
+def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
+    """M1 主入口（离线；与在线 SeatDetector 共享 _m1_step 代码路径）。
+
+    参数
+    ----
+    raw_data : array [N, range]
+        已轴规整的距离剖面（复数=完整模式；实数=退化模式）。2dfft 的 doppler 合并
+        由 detect.py 完成后再传入。
+    timestamps : float64 [N]
+    meta : dict（<rid>_meta.json 内容）
+    cfg : dict 或 None（config/M1_default.json 内容，None 用内置默认）
+    region_params : dict 或 None
+
+    返回
+    ----
+    dict: presence(int[N]), conf(list[float|None]), quality(list[str]),
+          score/f1n/f2n/f3n/f4n/gate/f23_win(float[N]), region(dict), degraded(bool),
+          warnings(list[str]), bg_mode(str)
+    """
+    X = np.asarray(raw_data)
+    if X.ndim == 1:
+        X = X[:, None]
+    n, nb = X.shape
+    ts = np.asarray(timestamps, dtype=np.float64)
 
     dt_med = float(np.median(np.diff(ts))) if n >= 2 else 1.0
     if not dt_med > 0:
         dt_med = 1.0
 
-    warmup_power = np.zeros(nb)  # main_bin 未锁定时的 warmup 累计能量
-
+    st = make_m1_state(cfg, meta, region_params, nb,
+                       complex_input=np.iscomplexobj(X), dt_med=dt_med)
     for t in range(n):
-        Xt = X[t]
-        reg = Xt[lo_r:hi_r + 1]
-
-        # ---- 质量判定 ----
-        finite_reg = np.all(np.isfinite(reg)) and np.all(np.isfinite(reg.real))
-        mean_power = float(np.mean(np.abs(reg.astype(np.complex128)) ** 2)) if finite_reg else 0.0
-        if not finite_reg:
-            quality[t] = "invalid_frame"
-            presence[t] = -1
-            conf[t] = None
-            score[t] = 0.0
-            continue
-        if mean_power < low_floor:
-            quality[t] = "low_signal"
-            presence[t] = -1
-            conf[t] = None
-            score[t] = 0.0
-            continue
-
-        # ---- main_bin 未锁定的退化路径：warmup 期累计，锁死后固定 ----
-        if main_bin is None:
-            warmup_power += np.abs(Xt.astype(np.complex128)) ** 2
-            if ts[t] >= warmup_s and not main_locked:
-                main_bin = int(np.argmax(warmup_power[lo_r:hi_r + 1])) + lo_r
-                main_locked = True
-
-        # ---- F1：区域残差能量（背景去除后） ----
-        resid_full = reg.astype(np.complex128) - bg[lo_r:hi_r + 1].astype(np.complex128)
-        if f1_bins == "non_main" and main_locked:
-            # v1.2 真机模式：排除主 bin——空座环境低频相位扰动集中于主 bin，
-            # 人体静态反射分布在侧 bin（T01/P01 probe2/3 实测：主 bin 空座/有人
-            # 分布重叠，侧 bin max(b1,b3) 间隔 ≥3.4 dB）。主 bin 仍由 F2/F3 监测。
-            resid = np.delete(resid_full, main_bin - lo_r)
-        else:
-            resid = resid_full
-        f1 = float(np.sum(np.abs(resid) ** 2))
-        f1_db = 10.0 * np.log10(f1 + 1e-12)
-        f1n[t] = np.clip((f1_db - f1_lo) / (f1_hi - f1_lo), 0.0, 1.0)
-        f4n[t] = 0.0 if prev_f1_db is None else float(
-            np.clip(abs(f1_db - prev_f1_db) / f4_jump, 0.0, 1.0))
-        prev_f1_db = f1_db
-
-        # ---- F2/F3：主 bin 相位与频段（复数且已锁定主 bin 才有） ----
-        if complex_input and main_locked:
-            if main_unw is None:
-                series = X[:, main_bin].astype(np.complex128)
-                main_unw = np.unwrap(np.angle(series))
-            lo_f2 = _window_lo(ts, t, win_f2, lo_f2)
-            seg = main_unw[lo_f2:t + 1]
-            if len(seg) >= 2:
-                f2n[t] = float(np.clip(np.std(seg) / f2_norm, 0.0, 1.0))
-            lo_f3 = _window_lo(ts, t, win_f3, lo_f3)
-            z = X[lo_f3:t + 1, main_bin].astype(np.complex128)
-            if len(z) >= 2:
-                Z = np.fft.fft(z) / len(z)
-                freqs = np.fft.fftfreq(len(z), d=dt_med)
-                band_mask = (np.abs(freqs) >= band_lo) & (np.abs(freqs) < band_hi)
-                if np.any(band_mask):
-                    denom = np.sum(np.abs(Z) ** 2)
-                    if f3_denom == "non_static":
-                        # 真实设备模式：静态杂波 DC 主导总分母（60+ dB 动静比），
-                        # 占比结构性趋零；排除 DC bin 后衡量"非静态能量中的呼吸占比"
-                        denom -= float(np.abs(Z[0]) ** 2)
-                    ratio = float(np.sum(np.abs(Z[band_mask]) ** 2) /
-                                  (denom + 1e-12))
-                    f3n[t] = float(np.clip(ratio * f3_gain, 0.0, 1.0))
-
-        # ---- gate 与得分 ----
-        lo_gate = _window_lo(ts, t, win_gate, lo_gate)
-        gate[t] = float(np.mean(f1n[lo_gate:t + 1]))
-        if complex_input and main_locked:
-            # 静态门证据：4 s 窗 (F2n+F3n) 均值（呼吸微动是否存在）
-            f23_win[t] = float(np.mean((f2n + f3n)[lo_gate:t + 1]))
-        if degraded:
-            score[t] = (w1 * f1n[t] + w4 * f4n[t]) / active
-        else:
-            score[t] = w1 * f1n[t] + gate[t] * (w2 * f2n[t] + w3 * f3n[t] + w4 * f4n[t])
-
-        # ---- 双阈值滞回（confirm 帧防抖 + 静态门；confirm=1 等价 demo 即时翻转） ----
-        s = score[t]
-        static = f23_floor is not None and main_locked and f23_win[t] < f23_floor
-        if static:
-            want = 0
-        elif s >= t_on:
-            want = 1
-        elif s <= t_off:
-            want = 0
-        else:
-            want = state
-        if want != state:
-            if want == cand_state:
-                cand += 1
-            else:
-                cand_state, cand = want, 1
-            if cand >= confirm:
-                state, cand = want, 0
-        else:
-            cand = 0
-        presence[t] = state
-
-        # ---- 置信度（demo 公式；warmup 封顶） ----
-        c = float(np.clip(0.5 + 0.49 * abs(2.0 * s - 1.0), 0.5, 0.99))
-        if ts[t] < warmup_s:
-            c = min(c, warmup_cap)
-        conf[t] = c
-
-        # ---- 背景更新：判决之后（因果） ----
-        if bg_mode == "ema":
-            # v1.1 原逻辑：仅无人帧 EMA 更换（保持行为完全不变）
-            if state == 0:
-                bg = (1.0 - alpha) * bg + alpha * (Xt.astype(np.complex128)
-                                                   if complex_input else Xt.astype(np.float64))
-        else:
-            # v1.2 snapshot_freeze：入座前累积空座快照，检测到占用即冻结；
-            # 释放后累计 re_snapshot_confirm 个「证据级空帧」（score ≤ t_off）→ 重建
-            # 快照（漂移/环境变化自适应）。hysteresis 波峰帧（t_off < score < t_on）
-            # 既不计数也不重置——入座未确认段/空座瞬态波峰不会误触发重建。
-            # 累积期（初始或重建）只吸收证据级空帧：回座未确认的人帧（score > t_off）
-            # 不入快照；冻结可发生在任意 K_eff（K_eff=0 表示保留旧快照）。
-            # bg 在累积期为运行均值（随帧收敛），冻结后完全静止。
-            if state == 1:
-                if not snap_frozen:
-                    snap_frozen = True  # 占用确认 → 冻结（部分窗口亦可）
-                    snap_events += 1
-                    if snap_cnt > 0:
-                        warnings.append(f"background: snapshot #{snap_events} frozen "
-                                        f"(K_eff={snap_cnt} frames)")
-                    else:
-                        warnings.append(f"background: snapshot #{snap_events} frozen "
-                                        f"(K_eff=0, previous snapshot kept)")
-                empty_run = 0
-            else:
-                if not snap_frozen:
-                    if s <= t_off:
-                        snap_acc = snap_acc + Xt
-                        snap_cnt += 1
-                        bg = snap_acc / snap_cnt
-                    if snap_cnt >= snap_frames:
-                        snap_frozen = True
-                        snap_events += 1
-                        warnings.append(f"background: snapshot #{snap_events} frozen "
-                                        f"(K_eff={snap_cnt} frames)")
-                else:
-                    if s <= t_off:
-                        empty_run += 1
-                    if empty_run >= re_snap_confirm:
-                        # 释放后证据级空帧足够久 → 重建快照
-                        snap_frozen = False
-                        snap_acc = np.zeros(nb, dtype=np.complex128
-                                            if complex_input else np.float64)
-                        snap_cnt = 0
-                        empty_run = 0
-                        warnings.append(f"background: snapshot #{snap_events} rebuild "
-                                        f"triggered ({re_snap_confirm} empty-evidence frames)")
+        _m1_step(st, X[t], float(ts[t]))
 
     return {
-        "presence": presence,
-        "conf": conf,
-        "quality": quality,
-        "score": score,
-        "f1n": f1n, "f2n": f2n, "f3n": f3n, "f4n": f4n,
-        "gate": gate,
-        "f23_win": f23_win,
-        "region": region,
-        "degraded": degraded,
-        "warnings": warnings,
-        "bg_mode": bg_mode,
+        "presence": np.asarray(st.presence, dtype=np.int64),
+        "conf": st.conf,
+        "quality": st.quality,
+        "score": np.asarray(st.score),
+        "f1n": np.asarray(st.f1n), "f2n": np.asarray(st.f2n),
+        "f3n": np.asarray(st.f3n), "f4n": np.asarray(st.f4n),
+        "gate": np.asarray(st.gate),
+        "f23_win": np.asarray(st.f23_win),
+        "region": st.region,
+        "degraded": st.degraded,
+        "warnings": st.warnings,
+        "bg_mode": st.bg_mode,
     }

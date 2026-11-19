@@ -1,6 +1,6 @@
-# seat-detection（自习室座位占用识别，离线算法）
+# seat-detection（自习室座位占用识别，离线算法 + 在线入口 v0.1）
 
-> 模块 C（cy071210）｜当前阶段：真实数据回放与验证（T01 开发集 12 组）｜更新 2026-11-19
+> 模块 C（cy071210）｜当前阶段：真实数据回放与验证（T01 开发集 12 组）；在线逐帧入口 v0.1 已交付 ｜更新 2026-11-19
 > 设计文档：`docs/seat-detection-design-v0.1.md`（§编号常以 `D-` 引用）；接口规范 v1 见归档 `C_cy071210_识别算法/`
 > **能力边界先读**：`CAPABILITIES_AND_KNOWN_ISSUES.md`（v1.2 presence 有已知钉死缺陷；姿态 v0.1 为 gated 拒识——如实声明，不夸大）
 
@@ -10,9 +10,10 @@
 seat-detection/
 ├── detect.py                  # 统一 CLI：读 recording → 算法 → result.csv + algorithm.json（自动 selfcheck）
 ├── algos/
-│   ├── m1_features.py         # M1 主检测（背景 EMA + 4 特征 + 滞回 + confirm + 静态门）
-│   ├── m2_posture.py          # M2 姿态 v0.1（参考标定 + 特征 + 对比度质量门 + 拒识）
-│   ├── b0_pointcloud.py       # B0 v0.1 候选③（2D CA-CFAR + MTI + 点数滞回）
+│   ├── m1_features.py         # M1 主检测（背景 EMA + 4 特征 + 滞回 + confirm + 静态门；离线/在线共用逐帧状态机）
+│   ├── online_detector.py     # 在线入口 v0.1：SeatDetector（逐帧会话）+ project_dev112p_frame（B 单帧投影）
+│   ├── m2_posture.py          # M2 姿态 v0.1（参考标定 + 特征 + 对比度质量门 + 拒识；仅离线）
+│   ├── b0_pointcloud.py       # B0 v0.1 候选③（2D CA-CFAR + MTI + 点数滞回；仅离线）
 │   ├── region.py              # 安装区域解析（三级降级 + warnings）
 │   └── selfcheck.py           # result.csv C1-C8 校验（接口词表权威实现）
 ├── config/
@@ -23,6 +24,7 @@ seat-detection/
 │   └── region_params_v0.1.json# 安装尺寸（名义值，待现场标定）
 ├── tools/
 │   ├── dev112p_adapter.py     # dsraw 归档 → *_raw.npz + _meta.json（chip1/rx0，region [1,3]）
+│   ├── live_seat.py           # 在线驱动：--replay 回放回归 / --post-url 逐帧转发 A（串行）
 │   ├── make_synthetic_g1.py   # G1 合成数据生成器
 │   ├── g1_analysis.py         # G1 分析 → outputs/g1-preview/
 │   └── annotation_spec_v0.1.md# 标注提案（给 D）
@@ -64,6 +66,31 @@ python tools/g1_analysis.py    # 报告：outputs/g1-preview/g1_report.md
 ```
 
 其他参数：`--algorithm M1|B0`（缺省按 meta.data_level 路由）、`--region-params <json>`、`--strict`。
+
+## 在线入口（v0.1，2026-11-19）
+
+`algos/online_detector.py`：`run_m1` 重构出的逐帧状态机（`make_m1_state`/`_m1_step`，离线/在线共用同一代码路径）之上的连续会话入口。
+
+- **`SeatDetector(meta, m1_config, region_params, frame_period_s, ...)`**：一次会话一个实例；
+  `feed_frame(剖面, ts, frame_id)` 返回九字段行 dict（contract v1）；`feed_dev112p(B单帧立方, 掩码, ts, frame_id)`
+  由 C 侧投影（`project_dev112p_frame`，与离线适配器 `chirp_mean` 字节等价）后进入识别。
+- **语义**：frame_id 0 起严格连续（跳号=会话错乱即报错）；timestamp 严格递增；
+  零有效 chirp 帧输出 `invalid_frame`（presence=-1）且不推进识别状态机（防 NaN 毒化相位链）。
+- **能力**：M1 实时占用 + 姿态占位（= 离线不带 `--posture-config`）；仅 1dfft。
+  M2/B0 在线化未排期（回填/点云语义待定）。
+- **验证**：12 组 T01 逐帧喂入 vs 离线 detect.py **逐字节一致**（result.csv + scores.csv）；
+  投影 vs 离线适配器字节等价（含缺 chirp、int16 极值、单 chirp、交叉选路、守卫）；
+  POST 链路 stub 冒烟 113 帧串行通过。
+
+```powershell
+# 回放回归（vs 离线无姿态分支输出，逐字节比对）
+python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <dir> --emit-scores --expect <离线输出目录>
+
+# 逐帧转发 A（串行 POST，等响应再发下一帧；A 契约）
+python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN> [--interval 0.1935]
+```
+
+B↔C 帧级契约（DevFrame 结构、丢帧的零掩码表达、握手 meta）：见仓库 `对接事宜/2026-11-19_B-C帧级接口提案.md`（提案，待 B 确认）。
 
 ## 算法（设计文档 §4–§5）
 

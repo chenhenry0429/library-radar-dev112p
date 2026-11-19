@@ -10,25 +10,54 @@
 <body>
   <header><div><h1>座位监测</h1><p id="source">正在连接 A 端服务</p></div><span id="connection" role="status">连接中</span></header>
   <main>
+    <section class="panel attention" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">当前反馈</h2>
+      <ul id="alerts" aria-live="polite"><li>正在连接监测服务</li></ul>
+    </section>
     <section class="overview" aria-label="座位概览">
       <div class="panel seat" id="seatPanel">
         <div class="caption" id="seat">座位</div>
         <strong id="occupancy">待确认</strong>
         <p id="availability">等待数据</p>
+        <dl class="totals">
+          <div><dt>总座位</dt><dd>1</dd></div>
+          <div><dt>可用</dt><dd id="available-count">0</dd></div>
+          <div><dt>待确认／复核</dt><dd id="pending-count">1</dd></div>
+        </dl>
       </div>
       <div class="panel metrics">
         <div><span class="caption">坐姿</span><b id="posture">—</b></div>
+        <div><span class="caption">个人标定</span><b id="calibration">—</b></div>
         <div><span class="caption">姿态提醒</span><b id="reminder">—</b></div>
+        <div><span class="caption">姿态累计</span><b id="elapsed">—</b></div>
         <div><span class="caption">释放剩余</span><b id="remaining">—</b></div>
-        <div><span class="caption">最近一帧</span><b id="frame">—</b></div>
+        <div><span class="caption">占用会话</span><b id="session">—</b></div>
       </div>
     </section>
+    <section class="panel evidence" aria-labelledby="evidence-title">
+      <h2 id="evidence-title">接收与识别证据</h2>
+      <dl class="signal-grid">
+        <div><dt>最近一帧</dt><dd id="frame">—</dd></div>
+        <div><dt>距上次收帧</dt><dd id="age">—</dd></div>
+        <div><dt>信号质量</dt><dd id="quality">—</dd></div>
+        <div><dt>C 端占用判断</dt><dd id="presence">—</dd></div>
+        <div><dt>目标数</dt><dd id="target-count">—</dd></div>
+        <div><dt>C 端姿态判断</dt><dd id="pose-evidence">—</dd></div>
+      </dl>
+      <details><summary>运行来源与参数</summary>
+        <p id="metadata">—</p><dl id="parameters" class="signal-grid"></dl>
+        <div id="known-issues-section" hidden><h3>算法已知问题</h3><ul id="known-issues"></ul></div>
+      </details>
+    </section>
     <section class="panel history">
-      <h2>最近事件</h2>
+      <div class="history-heading">
+        <h2>最近事件</h2>
+        <label for="event-filter">筛选 <select id="event-filter"><option value="all">全部</option><option value="warning">异常与恢复</option><option value="reminder">姿态提醒</option><option value="occupancy_change">占用变化</option></select></label>
+      </div>
       <p id="eventEmpty">等待事件</p>
       <ol id="events"></ol>
     </section>
   </main>
-  <footer>A 端实时入口 v0.1.1 · 本机运行</footer>
+  <footer>A 端实时监测 v0.2.0 · 本机运行</footer>
 </body>
 </html>

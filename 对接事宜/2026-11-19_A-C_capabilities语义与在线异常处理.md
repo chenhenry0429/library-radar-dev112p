@@ -15,7 +15,8 @@
 ## 1. 范围
 
 - 本文只覆盖 **C→A 段**（在线）。B→C 段见 `2026-11-19_B-C帧级接口提案.md`（待 B 确认）。
-- A 端行为以 2026-11-19 版代码为准：`A_stone140_应用与业务/live_monitor.py`、`live_feedback.py`、`offline_config.json`、`README_实时入口.md`；权威 schema 为仓库根 `contract.py`。
+- A 端行为以 2026-11-19 实时入口 **v0.3.0** 为准（`live_monitor.py`、`live_feedback.py`、`offline_config.json`、`README_实时入口.md`）；权威 schema 为仓库根 `contract.py`。当日 A v0.2.0 与 v0.3.0（新增使用者视图，帧 API 无变化）C 均已端到端预演验证（§4）。
+- 文内引用用函数级锚点（抗 A 改版行号漂移）；contract.py 行号为当日版本实测核对。
 
 ## 2. capabilities 语义收口
 
@@ -28,7 +29,7 @@
 ### 2.2 algorithm.json：`capabilities` 只放两个纯 bool
 
 - `contract.validate_algorithm`（contract.py L185-186）要求 `capabilities` 为 dict 且 `presence`/`posture` 为 bool；**额外键不拒绝**。
-- 但 A `live_monitor.py` `snapshot()`（L98 附近）把 capabilities 渲染为「已启用能力键名列表」：`[k for k, v in caps.items() if v]`——**任何 truthy 扩展键都会被当成能力展示**。detect.py 离线 algorithm.json 里的 `posture_semantics`（一段说明字符串）会污染该列表。
+- 但 A `live_monitor.py` 的 `snapshot()` 把 capabilities 渲染为「已启用能力键名列表」：`[k for k, v in caps.items() if v]`——**任何 truthy 扩展键都会被当成能力展示**。detect.py 离线 algorithm.json 里的 `posture_semantics`（一段说明字符串）会污染该列表。
 - **收口规范（C 已执行）**：
   - `capabilities` = `{"presence": <bool>, "posture": <bool>}`，仅此两键；
   - 语义说明文本一律放 `notes`（contract 不校验 notes 内容）；
@@ -57,7 +58,7 @@
 | B→C | 无有效数据的帧号上发全零 `valid_chirps` 帧保持 frame_id 连续（显式信号，区别于静默跳帧） | B-C 帧级接口提案 关键决策 2/3（待 B 确认） |
 | C | 输出 `invalid_frame` 行（presence=-1、target_count=-1、conf 空）**不推进识别状态机**，记 warning | `algos/online_detector.py: feed_dev112p`（DevFrameError 语义） |
 | C→A | invalid_frame 行合法通过 `parse_result_row`（quality≠ok 分支要求全空+unknown，恰是 C 的输出） | contract.py L266-267；预演 T1 全帧接受 |
-| 越界 | frame_id 跳号 = 协议错乱：C `SeatDetector` 直接 raise；A `validate_position` 400 拒收 | online_detector `_check_frame_id`；live_monitor L173-176 |
+| 越界 | frame_id 跳号 = 协议错乱：C `SeatDetector` 直接 raise；A `validate_position` 400 拒收 | online_detector `_check_frame_id`；live_monitor `validate_position` |
 
 ### 3.2 断流重连
 
@@ -91,7 +92,7 @@
 
 ## 4. C↔A 端到端预演（真 A，非 stub）
 
-脚本：C 工作区 `.deepworks/tmp/live_e2e_a.py`（pilot_01，349 帧，M1 v1.2 配置）。结果 **20/20 全过**：
+脚本：C 工作区 `.deepworks/tmp/live_e2e_a.py`（pilot_01，349 帧，M1 v1.2 配置）。结果 **20/20 全过**（对 A v0.2.0 与 v0.3.0 各跑一轮；v0.3.0 仅新增使用者视图资产路由，帧 API 无变化）：
 
 | 组 | 验证点 | 结果 |
 | --- | --- | --- |

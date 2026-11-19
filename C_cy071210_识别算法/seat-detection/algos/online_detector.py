@@ -231,25 +231,33 @@ class SeatDetector:
         }
 
     def capabilities(self):
-        """会话能力声明（A 侧 algorithm.json capabilities 对齐格式）。"""
-        return {
-            "presence": True,
-            "posture": False,
-            "posture_semantics": (
-                "online v0.1: M1 real-time presence only; posture column is the "
-                "interface placeholder (not_applicable when empty, unknown when "
-                "occupied, calibration_status=uncalibrated). Offline M2 v0.1 "
-                "gated baseline is not online yet (backfill semantics); "
-                "see CAPABILITIES_AND_KNOWN_ISSUES.md"),
-        }
+        """会话能力声明（contract / A 端 algorithm.json capabilities）。
+
+        规范（A↔C 收口，2026-11-19）：capabilities 只放 presence/posture 两个
+        纯 bool 能力键。A 端 snapshot 把 truthy 键名渲染为“已启用能力”，
+        任何非 bool 扩展键都会污染展示 —— 扩展语义放 capabilities_semantics()
+        / notes，禁止并入本 dict（contract 只校验两个 bool，不拒扩展键，
+        但扩展键对 A 是展示缺陷）。
+        """
+        return {"presence": True, "posture": False}
+
+    def capabilities_semantics(self):
+        """能力语义说明（诊断/文档用；不得进 algorithm.json capabilities）。"""
+        return (
+            "online v0.1: M1 real-time presence only; posture column is the "
+            "interface placeholder (not_applicable when empty, unknown when "
+            "occupied, calibration_status=uncalibrated). Offline M2 v0.1 "
+            "gated baseline is not online yet (backfill semantics); "
+            "see CAPABILITIES_AND_KNOWN_ISSUES.md")
 
     def session_summary(self):
-        """会话算法说明（live_seat.py 可写入 algorithm 风格的 JSON 供 A 载入）。"""
+        """会话算法说明（live_seat.py 写 <rid>_session.json，诊断用）。"""
         st = self._st
         return {
             "algorithm_version": "M1 v1.2 + online v0.1 (placeholder posture)",
             "model_version": "M1-v1.2+online-v0.1",
             "capabilities": self.capabilities(),
+            "capabilities_semantics": self.capabilities_semantics(),
             "region": {k: st.region[k] for k in ("lo", "hi", "main_bin", "source")},
             "degraded_input": st.degraded,
             "bg_mode": st.bg_mode,

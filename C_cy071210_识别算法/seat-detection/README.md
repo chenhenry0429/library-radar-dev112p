@@ -80,17 +80,28 @@ python tools/g1_analysis.py    # 报告：outputs/g1-preview/g1_report.md
   M2/B0 在线化未排期（回填/点云语义待定）。
 - **验证**：12 组 T01 逐帧喂入 vs 离线 detect.py **逐字节一致**（result.csv + scores.csv）；
   投影 vs 离线适配器字节等价（含缺 chirp、int16 极值、单 chirp、交叉选路、守卫）；
-  POST 链路 stub 冒烟 113 帧串行通过。
+  **C↔A 端到端预演（真 live_monitor.py --live）20/20 通过**：全帧 POST / 断流恢复
+  （feed_interrupted→feed_resumed）/ 401 快败 / 400 快败且会话存活。
+- **POST 失败规则**（与 A 收口，2026-11-19）：HTTP 状态错误不重试即中止（400 修当前帧、
+  401 换 token）；网络错误指数退避重试（`--retry-max`/`--retry-base`），重试前 `GET /api/state`
+  对齐防重复帧；耗尽即中止（不静默丢帧）。响应 `accepted_frame_id` 与帧号不符即报错。
+- **A --live 启动文件**：`--emit-algorithm` 生成 `<rid>_algorithm_online.json`
+  （contract v1 新格式、capabilities 纯 bool；detect.py 离线 algorithm.json 为旧回放格式，
+  A --live 严格校验不收）；每次运行幂等重写，A 端启动用它。
 
 ```powershell
+# 生成 A --live 启动所需的 algorithm.json（contract v1 新格式）
+python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <dir> --emit-algorithm
+
 # 回放回归（vs 离线无姿态分支输出，逐字节比对）
 python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <dir> --emit-scores --expect <离线输出目录>
 
 # 逐帧转发 A（串行 POST，等响应再发下一帧；A 契约）
-python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN> [--interval 0.1935]
+python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN> [--interval 0.1935] [--retry-max 8 --retry-base 1.0]
 ```
 
-B↔C 帧级契约（DevFrame 结构、丢帧的零掩码表达、握手 meta）：见仓库 `对接事宜/2026-11-19_B-C帧级接口提案.md`（提案，待 B 确认）。
+B↔C 帧级契约（DevFrame 结构、丢帧的零掩码表达、握手 meta）：见镜像 `对接事宜/2026-11-19_B-C帧级接口提案.md`（提案，待 B 确认）。
+A↔C capabilities 语义与在线异常处理（丢帧/断流重连/会话重置/POST 失败）：见镜像 `对接事宜/2026-11-19_A-C_capabilities语义与在线异常处理.md`（成文，待 A 复核）。
 
 ## 算法（设计文档 §4–§5）
 

@@ -60,17 +60,46 @@ p02-retest / p04-retest / chair-shift / pilot-01 / short-01 / short-02
 - v1.2 presence 钉死缺陷（P0-1）不因在线化改变——在线入口交付的是**管线与一致性**，不是精度；修复（R1–R5）仍属团队决策
 - 现场联调（采集电脑逐帧输出 → A 实时展示）待 B 确认契约后进行
 
+## 2026-11-19 补录：capabilities 收口 + C↔A 端到端预演（真 A，非 stub）
+
+响应组员反馈完成的两项收口（详见镜像 `对接事宜/2026-11-19_A-C_capabilities语义与在线异常处理.md`，待 A 复核）：
+
+1. **capabilities 语义收口**：`SeatDetector.capabilities()` 改为纯 bool
+   `{"presence": true, "posture": false}`（语义文本外移 `capabilities_semantics()`，仅进诊断件）；
+   `live_seat.py --emit-algorithm` 生成 **contract v1 新格式** `<rid>_algorithm_online.json`
+   （capabilities 纯 bool、顶层 thresholds、temporal_smoothing、parameter_version=md5_8+online-v0.1），
+   通过镜像 `contract.validate_algorithm` 实测校验——detect.py 离线 algorithm.json 为旧回放格式，
+   A `--live` 严格校验不收，在线会话必须用本文件。
+2. **POST 失败/断流 C 侧规则落地**（`live_seat.py post_row` 重写）：HTTP 状态错误不重试即中止；
+   网络错误指数退避重试（`--retry-max 8`/`--retry-base 1s`），重试前 `GET /api/state` 对齐
+   防重复帧；耗尽中止不静默丢帧；回执 `accepted_frame_id` 与帧号不符即报错。
+
+**端到端预演（pilot_01，349 帧，M1 v1.2 配置；脚本 `.deepworks/tmp/live_e2e_a.py`）20/20 全过**：
+
+| 组 | 验证点 | 结果 |
+| --- | --- | --- |
+| P0 | `--emit-algorithm` 生成 contract 新格式；capabilities 纯 bool | PASS |
+| T1 | live_seat 全帧串行 POST 349 帧：A 全收（state.frame_id=348）、capabilities 渲染 == `["presence"]`、无 feed_* 事件、phase=receiving | PASS |
+| T2 | 断流 3.2s（> A data_gap_s=2）：`feed_interrupted` + `feed_resumed` 均记录；会话连续不丢帧 | PASS |
+| T3 | 错 token → HTTP 401 快败（0.01s，无重试退避）；A 一帧未收 | PASS |
+| T4 | 跳帧（frame_id=99）→ HTTP 400 快败（0.02s，无重试）；修正后续帧仍被接受（会话存活） | PASS |
+
+改造后 12 组在线回归重跑 **ALL PASS**（逐字节一致，零漂移）。
+
 ## 复现
 
 ```powershell
 # 离线基线
 python detect.py --recording examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --emit-scores --out <base>
 
+# 生成 A --live 启动文件（contract v1 新格式）
+python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <dir> --emit-algorithm
+
 # 在线回放回归（逐字节比对）
 python -X utf8 tools/live_seat.py --replay examples/real/<rid>_raw.npz --config config/M1_dev112p_v0.2.json --out <out> --emit-scores --expect <base>
 
-# 逐帧转发 A
-python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN>
+# 逐帧转发 A（--retry-max/--retry-base 为网络错误退避重试参数）
+python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2.json --post-url http://127.0.0.1:8766/api/frame --token <RADAR_A_FRAME_TOKEN> [--retry-max 8 --retry-base 1.0]
 ```
 
 回归驱动（12 组批量 + 投影等价 + 守卫）在 `.deepworks/tmp/m1_regress_online.py`（诊断脚本，非交付物）。

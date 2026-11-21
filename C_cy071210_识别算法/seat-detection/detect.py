@@ -43,7 +43,7 @@ HEADER = ["frame_id", "timestamp", "presence", "presence_confidence",
           "target_count", "posture", "posture_confidence",
           "calibration_status", "quality"]
 
-KNOWN_AXES = {"frame", "channel", "doppler_bin", "range_bin"}
+KNOWN_AXES = {"frame", "chirp_parity", "channel", "doppler_bin", "range_bin"}
 
 
 def load_json(path):
@@ -58,9 +58,10 @@ def md5_8(obj):
 
 
 def normalize_axes(raw, meta):
-    """按 axis_order 规整为 [frame,(channel),(doppler),range]。
+    """按 axis_order 规整为 [frame,(chirp_parity),(channel),(doppler),range]。
 
     channel 轴做非相干功率合并（等效幅值 sqrt(Σ|X|²)——CFAR/功率特征语义不变）。
+    chirp_parity 轴保留（v1.2.1 奇偶分开处理，见 algos/m1_v121.py）。
     返回 (X, has_doppler)。
     """
     order = [str(a).lower() for a in (meta.get("axis_order") or [])]
@@ -74,10 +75,11 @@ def normalize_axes(raw, meta):
         raise ValueError(f"unknown axis names in axis_order: {unknown} (known: {sorted(KNOWN_AXES)})")
     if "frame" not in order or "range_bin" not in order:
         raise ValueError("axis_order must contain 'frame' and 'range_bin'")
-    desired = [a for a in ("frame", "channel", "doppler_bin", "range_bin") if a in order]
+    desired = [a for a in ("frame", "chirp_parity", "doppler_bin", "range_bin", "channel")
+               if a in order]
     X = np.transpose(raw, [order.index(a) for a in desired])
     if "channel" in desired:
-        X = np.sqrt(np.sum(np.abs(X.astype(np.complex128)) ** 2, axis=1))
+        X = np.sqrt(np.sum(np.abs(X.astype(np.complex128)) ** 2, axis=-1))
     return X, ("doppler_bin" in desired)
 
 

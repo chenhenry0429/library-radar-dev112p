@@ -67,6 +67,39 @@ python tools/g1_analysis.py    # 报告：outputs/g1-preview/g1_report.md
 
 其他参数：`--algorithm M1|B0`（缺省按 meta.data_level 路由）、`--region-params <json>`、`--strict`。
 
+## v1.2.1（离座判空修复，2026-11-21）
+
+v1.2 在真实数据上「开场误报 + 离座不判空」，v1.2.1 用独立分支/独立配置修复，
+v1.2 的配置与既有输出保持不变。
+
+```powershell
+# 0) 归档 → 奇偶分链（v1.2.1 输入格式 [frame, chirp_parity, range]）
+python tools/dev112p_adapter.py <dsraw目录> --parity split --skip-2dfft --out examples/real_v121
+
+# 1) v1.2.1 单组
+python detect.py --recording examples/real_v121/<rid>_1dfft_parity_raw.npz --config config/M1_dev112p_v1.2.1.json --emit-scores
+
+# 2) 批量 + 验收对照表（v1.2 vs v1.2.1：开场误报/静坐保持/走远判空/全空组）
+python detect.py --recording examples/real_v121 --config config/M1_dev112p_v1.2.1.json --emit-scores
+python tools/eval_v121.py      # → outputs/v1.2.1/v1.2.1_comparison.{md,csv}
+```
+
+要点（详见 `../outputs/v1.2.1/v1.2.1_fix_report.md`）：
+
+- **R1 奇偶 chirp 分开**：避免 11× 奇偶幅度差 + 部分帧配比偏置污染背景；
+- **R2 开场标定**：先积累 ≥10 s 有效帧（≥40 帧）再启用占用判断，标定期 presence=0；
+- **R3 判空**：F1 改用「泄漏归一残差」（bin/|bin0|），Bin1 微动指数（10 s 去趋势
+  幅度 std/mean，按标定空座噪声底归一）连续 5 s 回到空座带 → 判空并重建快照；
+  F1 稳定性（|Δf1| ≤ 6 dB）在释放时刻作否决。
+- 结果：开场误报 100%→1%、邻座/过道全空 100%→0%、走远判空 0/7→3/7
+  （其余为人未走出波束/静坐过静，见报告 §5）。
+
+```powershell
+# 3) 在线逐帧回放一致性（v1.2.1 同样逐字节一致）
+python tools/live_seat.py --replay examples/real_v121/<rid>_1dfft_parity_raw.npz \
+    --config config/M1_dev112p_v1.2.1.json --out <live_out> --emit-scores --expect <离线输出目录>
+```
+
 ## 在线入口（v0.1，2026-11-19）
 
 `algos/online_detector.py`：`run_m1` 重构出的逐帧状态机（`make_m1_state`/`_m1_step`，离线/在线共用同一代码路径）之上的连续会话入口。

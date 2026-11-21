@@ -53,6 +53,11 @@ GROUP_OF = {
 ALL_EMPTY = {"T01_neighbor_R01", "T01_aisle_R01"}
 UNLABELLED = {"T01_P01_R01", "T01_P03_R01", "pilot_01", "short_01", "short_02"}
 
+# 2026-11-19 现场在线抓包（484 帧，20 cm 候选位置；组员复核用）
+LIVE_DIR = "examples/live_v121"
+LIVE_CORES = ["T01_http_live_20261119_201257_965862"]
+LIVE_GROUP = "live-484"
+
 LEAVE_WORDS = ("走远", "离座", "离开")
 SIT_WORDS = ("坐稳", "返回", "坐上")
 
@@ -246,6 +251,22 @@ def main():
         m12 = metrics(pr12, ts12, segs, core) if segs is not None or core in ALL_EMPTY else {"frames": len(ts)}
         m121 = metrics(pr121, ts, segs, core) if segs is not None or core in ALL_EMPTY else {"frames": len(ts)}
         rows.append({"core": core, "group": GROUP_OF.get(core, ""), "gt": src,
+                     "v12": m12, "v121": m121})
+        print(f"[{core}] gt={src}  v1.2={m12}  v1.2.1={m121}")
+
+    # ---- 2026-11-19 现场在线抓包（484 帧，20 cm 候选位置）----
+    for core in LIVE_CORES:
+        p121 = os.path.join(LIVE_DIR, f"{core}_c1r0_1dfft_parity_raw.npz")
+        p12 = os.path.join(LIVE_DIR, f"{core}_c1r0_1dfft_raw.npz")
+        if not (os.path.exists(p121) and os.path.exists(p12)):
+            print(f"[{core}] live capture not found under {LIVE_DIR}; skipped")
+            continue
+        rid, meta, pr121, ts = run_version(p121, cfg121)
+        _, _, pr12, ts12 = run_version(p12, cfg12)
+        segs, src = gt_rate(meta, core, float(ts[-1]))
+        m12 = metrics(pr12, ts12, segs, core)
+        m121 = metrics(pr121, ts, segs, core)
+        rows.append({"core": core, "group": LIVE_GROUP, "gt": src,
                      "v12": m12, "v121": m121})
         print(f"[{core}] gt={src}  v1.2={m12}  v1.2.1={m121}")
 

@@ -16,6 +16,7 @@ Thumbs.db
 !DEMO_ONLY/release_demo/**/*_raw.npz
 !**/examples/real/**/*.npz
 !**/examples/real_v121/**/*.npz
+!**/examples/live_v121/**/*.npz
 /output/
 /outputs/
 /recordings/

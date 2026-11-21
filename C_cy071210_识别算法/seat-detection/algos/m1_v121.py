@@ -101,6 +101,7 @@ class M1V121State:
         "act_slow_hist", "act_fast_hist",
         # 标定
         "calib_amp_sum", "calib_cnt", "calib_done", "calib_act", "calib_f1", "bg_amp",
+        "calib_end_ts",
         "valid_frames", "floor", "f1_ref_db",
         # 判决
         "state", "cand", "cand_state", "empty_run", "snap_events",
@@ -175,6 +176,7 @@ class M1V121State:
         self.calib_amp_sum = np.zeros((self.n_parity, self.nb), dtype=np.float64)
         self.calib_cnt = 0
         self.calib_done = False
+        self.calib_end_ts = None
         self.calib_act = []
         self.calib_f1 = []
         self.bg_amp = np.zeros((self.n_parity, self.nb), dtype=np.float64)
@@ -205,6 +207,7 @@ class M1V121State:
         f1s = [self._f1_db(qs[i]) for i in range(len(self.ts_hist))]
         self.f1_ref_db = float(np.median(f1s)) if f1s else 0.0
         self.calib_done = True
+        self.calib_end_ts = float(self.ts_hist[-1])
         self.warnings.append(
             f"v1.2.1 calibration: {self.valid_frames} valid frames over "
             f"{self.ts_hist[-1]:.1f}s; empty motion floor={self.floor:.5f} "
@@ -347,6 +350,17 @@ class M1V121State:
             self.calibrating[t] = 1
             if self._calib_ready(float(ts_t)):
                 self._finish_calibration()
+            self.conf[t] = 0.5
+            return
+
+        # ---- 标定后的“整窗”等待：慢窗必须完全落在标定结束之后才允许判决 ----
+        # 标定结束时慢窗里仍混着上电/摆位过渡段（T01 484 帧实测：标定结束 10.1 s，
+        # 10.2–14.5 s 的 10 s 窗被 10–13 s 的幅度台阶/回摆污染，m 4.6–6.5 →
+        # 11.61 s 误入场）。等一个完整慢窗（win_slow）过去再启用判决，
+        # 过渡段只影响诊断量、不影响 presence。
+        if self.calib_end_ts is not None and float(ts_t) < self.calib_end_ts + self.win_slow:
+            self.m_trace[t] = m_slow / self.floor if self.floor else 0.0
+            self.m4_trace[t] = m_fast / self.floor if self.floor else 0.0
             self.conf[t] = 0.5
             return
 

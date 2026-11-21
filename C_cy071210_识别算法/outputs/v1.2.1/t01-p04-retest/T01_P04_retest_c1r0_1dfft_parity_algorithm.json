@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "recording_id": "T01_P04_retest_c1r0_1dfft_parity",
   "algorithm_version": "M1 v1.2.1",
-  "parameter_version": "8c8fd198",
+  "parameter_version": "a877c6fe",
   "capabilities": {
     "presence": true,
     "posture": false,
@@ -35,8 +35,7 @@
         "entry_confirm_frames": 8,
         "release_ratio": 1.45,
         "release_frames": 26,
-        "floor_alpha": 0.02,
-        "floor_update_below": 2.0
+        "floor_alpha": 0.02
       },
       "f1": {
         "normalization": "leakage_ratio",

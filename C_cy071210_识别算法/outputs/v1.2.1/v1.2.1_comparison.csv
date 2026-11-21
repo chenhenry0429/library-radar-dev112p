@@ -1,0 +1,14 @@
+group,recording,gt_source,v12_open_fp,v12_open_n,v121_open_fp,v121_open_n,v12_sit_hit,v12_sit_n,v121_sit_hit,v121_sit_n,v12_release_delays_s,v121_release_delays_s,v12_release_missing,v121_release_missing,v12_sit_false_release,v121_sit_false_release,v12_all_empty_fp,v12_all_empty_n,v121_all_empty_fp,v121_all_empty_n
+t01-p01,T01_P01_R01,no_labels,,,,,,,,,,,,,,,,,,
+t01-p02-formal,T01_P02_R01,stopwatch_events(provisional),41,41,0,41,631,631,613,613,,,1,1,0,0,,,,
+t01-p02-retest,T01_P02_retest,stopwatch_events(provisional),48,48,0,48,236,236,225,225,,,2,2,0,0,,,,
+t01-p03-formal,T01_P03_R01,no_labels,,,,,,,,,,,,,,,,,,
+t01-p04-formal,T01_P04_R01,stopwatch_events(provisional),37,37,0,37,618,618,574,593,,,1,1,0,0,,,,
+t01-p04-retest,T01_P04_retest,stopwatch_events(provisional),54,54,0,54,261,261,225,225,,10.1|9.9,2,0,0,0,,,,
+t01-aisle,T01_aisle_R01,all_empty_manual,261,261,0,261,,,,,,,,,,,261,261,0,261
+t01-chair-shift,T01_chair_shift,stopwatch_events(provisional),60,60,0,60,125,125,116,116,,9.0,1,0,0,0,,,,
+t01-neighbor,T01_neighbor_R01,all_empty_manual,271,271,0,271,,,,,,,,,,,271,271,0,271
+,pilot_01,no_labels,,,,,,,,,,,,,,,,,,
+,short_01,no_labels,,,,,,,,,,,,,,,,,,
+,short_02,no_labels,,,,,,,,,,,,,,,,,,
+live-484,T01_http_live_20261119_201257_965862,stopwatch_events(provisional),101,101,11,101,142,142,142,142,,9.5,1,0,0,0,,,,

@@ -210,7 +210,16 @@ def _resolve_params(cfg):
 
 
 def make_m1_state(cfg, meta, region_params, nb, complex_input, dt_med):
-    """构建 M1State（离线/在线共用）。区域解析与退化处理在此一次完成。"""
+    """构建 M1State（离线/在线共用）。区域解析与退化处理在此一次完成。
+
+    config 显式 ``feature_set: "v1.2.1"`` 时返回 v1.2.1 状态机
+    （``algos/m1_v121.py``，同样提供 step/presence/conf/quality 等轨道）；
+    否则返回 v1.2 的 M1State（行为逐字节不变）。
+    """
+    from .m1_v121 import is_v121_config, M1V121State
+    if is_v121_config(cfg):
+        return M1V121State(cfg, meta, region_params, nb,
+                           complex_input=complex_input, dt_med=dt_med)
     prm = _resolve_params(cfg or {})
     st = M1State()
     for k, v in prm.items():
@@ -270,8 +279,12 @@ def _m1_step(st, Xt, ts_t):
     """单帧推进（严格因果；与重构前 run_m1 循环体逐行等价）。
 
     Xt  : 单帧 range profile [nb]（complex 或 real，须与构造时 complex_input 一致）
+          或 v1.2.1 的 [parity, nb]
     ts_t: 本帧 timestamp（秒，相对录制/会话起点）
     """
+    if getattr(st, "step", None) is not None:  # v1.2.1 状态机
+        st.step(Xt, ts_t)
+        return
     t = len(st.ts_hist)
     st.ts_hist.append(ts_t)
     if st.complex_input:
@@ -479,6 +492,11 @@ def run_m1(raw_data, timestamps, meta, cfg=None, region_params=None):
           warnings(list[str]), bg_mode(str)
     """
     X = np.asarray(raw_data)
+
+    from .m1_v121 import is_v121_config, run_m1_v121
+    if is_v121_config(cfg):
+        return run_m1_v121(raw_data, timestamps, meta, cfg, region_params)
+
     if X.ndim == 1:
         X = X[:, None]
     n, nb = X.shape

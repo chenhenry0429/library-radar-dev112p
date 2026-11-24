@@ -1,4 +1,4 @@
-"""A 端实时入口 v0.3.0。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.4.0。运行 python live_monitor.py --help。"""
 import argparse
 import csv
 from hmac import compare_digest
@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT.parent))
 from contract import RESULT_COLUMNS, parse_result_row, read_json, recording_id, validate_algorithm
 from offline_state_machine import StateMachine, validate_config
 from live_feedback import LiveFeedback
+from radar_launcher import RadarLauncher
 
 DEMO_ID = "20261103_PDEMO_S01_lifecycle_01"
 DEMO = ROOT.parent / "DEMO_ONLY" / "release_demo" / DEMO_ID / f"{DEMO_ID}_result.csv"
@@ -106,7 +107,7 @@ class LiveMonitor:
                         evidence=self.feedback.evidence, events=list(self.feedback.events))
 
 
-def handler_for(monitor, token):
+def handler_for(monitor, token, launcher=None):
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             self.request.settimeout(5.)
@@ -133,7 +134,10 @@ def handler_for(monitor, token):
                 self.send_json({"error": "仅接受本机监测地址"}, 403)
                 return
             if self.path == "/api/state":
-                self.send_json(monitor.snapshot())
+                snapshot = (launcher or monitor).snapshot()
+                if launcher is None:
+                    snapshot["detector"] = "external" if token else "replay"
+                self.send_json(snapshot)
             elif self.path in ASSETS:
                 name, mime = ASSETS[self.path]
                 self.respond((ROOT / name).read_bytes(), mime)
@@ -144,14 +148,25 @@ def handler_for(monitor, token):
             if not self.local_host():
                 self.send_json({"error": "仅接受本机监测地址"}, 403)
                 return
+            if self.path in ("/api/detection/start", "/api/detection/stop"):
+                origin = f"http://{self.headers['Host']}"
+                if self.headers.get("Origin") != origin or self.headers.get("X-Radar-Control") != "1":
+                    self.send_json({"error": "仅接受本机页面操作"}, 403)
+                    return
+                if launcher is None:
+                    self.send_json({"detector": "external" if token else "replay"}, 409)
+                    return
+                detector = launcher.start(self.server.server_port) if self.path.endswith("/start") else launcher.stop()
+                self.send_json({"detector": detector})
+                return
             if self.path != "/api/frame":
                 self.send_json({"error": "地址不存在"}, 404)
                 return
-            if token is None:
+            if token is None and launcher is None:
                 self.send_json({"error": "回放模式下请使用已加载的录制"}, 409)
                 return
             authorization = self.headers.get("Authorization", "").encode()
-            if not compare_digest(authorization, f"Bearer {token}".encode()):
+            if launcher is None and not compare_digest(authorization, f"Bearer {token}".encode()):
                 self.send_json({"error": "需要接入令牌"}, 401)
                 return
             try:
@@ -161,7 +176,10 @@ def handler_for(monitor, token):
                 payload = json.loads(self.rfile.read(length))
                 if not isinstance(payload, dict) or set(payload) != set(RESULT_COLUMNS):
                     raise ValueError("帧须包含现有结果接口的九个字段")
-                frame_id = monitor.push(payload)
+                frame_id = launcher.push(payload, authorization) if launcher is not None else monitor.push(payload)
+            except PermissionError:
+                self.send_json({"error": "需要当前检测会话的接入令牌"}, 401)
+                return
             except (ValueError, TypeError, TimeoutError) as error:
                 self.send_json({"error": str(error)}, 400)
                 return
@@ -226,6 +244,16 @@ def load_metadata(meta_path, algorithm_path, *, replay):
     return meta, validate_algorithm(algorithm, meta, algorithm_path), period
 
 
+def load_device_session(path, config):
+    settings = read_json(path)
+    meta, algorithm, _ = load_metadata(
+        path.parent / settings["meta"], path.parent / settings["algorithm"], replay=False
+    )
+    if meta["source_kind"] != "measured":
+        raise ValueError("现场检测须使用实测会话描述")
+    return settings, LiveMonitor(meta, algorithm, config)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--replay", type=Path, help="按时间间隔发送现有 *_result.csv，默认使用合成样例")
@@ -235,6 +263,8 @@ def main():
     parser.add_argument("--config", type=Path, default=ROOT / "offline_config.json")
     parser.add_argument("--speed", type=float, default=1., help="仅改变回放速度")
     parser.add_argument("--port", type=int, default=8766)
+    parser.add_argument("--device-config", type=Path, default=ROOT / "radar_device.local.json",
+                        help="首页开始检测使用的本机启动配置")
     args = parser.parse_args()
     if not math.isfinite(args.speed) or not 0.1 <= args.speed <= 20:
         parser.error("回放速度须在 0.1 到 20 之间")
@@ -252,7 +282,10 @@ def main():
         rows = None if args.live else load_recorded_rows(replay, algorithm, nominal_period)
         monitor = LiveMonitor(meta, algorithm, config, replay_rows=rows, speed=args.speed, nominal_period=nominal_period)
         token = (os.environ.get("RADAR_A_FRAME_TOKEN") or token_urlsafe(24)) if args.live else None
-        with ThreadingHTTPServer(("127.0.0.1", args.port), handler_for(monitor, token)) as server:
+        launcher = None if args.live or args.replay else RadarLauncher(
+            monitor, args.device_config, lambda path: load_device_session(path, config)
+        )
+        with ThreadingHTTPServer(("127.0.0.1", args.port), handler_for(monitor, token, launcher)) as server:
             print(f"打开 http://127.0.0.1:{server.server_port}/", flush=True)
             if args.live and "RADAR_A_FRAME_TOKEN" not in os.environ:
                 print(f"本机 C 接入令牌：{token}", flush=True)
@@ -261,6 +294,8 @@ def main():
             except KeyboardInterrupt:
                 pass
             finally:
+                if launcher is not None:
+                    launcher.stop()
                 monitor.stop.set()
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(1, f"启动失败：{error}\n")

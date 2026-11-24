@@ -14,6 +14,11 @@
       <span class="feed" id="feed">连接中</span>
     </section>
 
+    <section class="detection" aria-label="雷达检测">
+      <button id="detect" type="button" disabled><span class="detect-icon" aria-hidden="true"></span><span id="detect-label">开始检测</span></button>
+      <p id="detect-status" role="status">正在连接本机监测服务。</p>
+    </section>
+
     <div class="cards">
       <section class="card seat" id="seat-card" data-tone="waiting" aria-labelledby="seat-heading">
         <div class="seat-top"><h2 id="seat-heading">座位状态</h2><span class="seat-id" id="seat-id" hidden></span></div>

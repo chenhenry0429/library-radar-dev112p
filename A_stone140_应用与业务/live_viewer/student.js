@@ -86,14 +86,73 @@ function renderStudent(snapshot) {
 }
 
 let lastReading = null;
+let controlBusy = false;
+let requestVersion = 0;
+
+function renderDetection(snapshot) {
+  const status = snapshot?.detector;
+  const button = byId("detect");
+  const active = ["starting", "running", "stop_failed"].includes(status);
+  const messages = {
+    unconfigured: "尚未配置本机雷达采集程序。",
+    ready: "雷达待启动。请确认设备已连接本机。",
+    starting: "正在启动雷达并等待第一帧。",
+    running: snapshot?.phase === "interrupted" ? "雷达数据暂时中断。" : "正在检测。",
+    stopped: "检测已停止。",
+    stop_failed: "检测程序尚未退出。请再次停止或检查启动窗口。",
+    exited: "检测程序已退出，可重新启动。",
+    launch_failed: "检测程序启动失败。请检查本机配置和启动窗口。",
+    no_frames: "启动后未收到数据，已停止。请检查设备连接和采集程序。",
+    external: "当前由本机采集程序控制。",
+    replay: "当前为录制回放。",
+    offline: "本机监测服务未连接。",
+  };
+  button.dataset.action = active ? "stop" : "start";
+  button.disabled = controlBusy || !status || ["offline", "external", "replay"].includes(status);
+  text("detect-label", active ? "停止检测" : "开始检测");
+  text("detect-status", messages[status] ?? "正在连接本机监测服务。");
+}
+
+byId("detect").addEventListener("click", async () => {
+  const action = byId("detect").dataset.action;
+  requestVersion++;
+  controlBusy = true;
+  renderDetection(lastReading);
+  try {
+    const response = await fetch("/api/detection/" + action, {
+      method: "POST", headers: {"X-Radar-Control": "1"}, signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error("Detection control unavailable");
+    const {detector} = await response.json();
+    if (["starting", "stopped"].includes(detector)) {
+      lastReading = {mode: "live", phase: "waiting", detector};
+      renderStudent(lastReading);
+    } else {
+      lastReading = {...lastReading, detector};
+    }
+  } catch {
+    text("detect-status", "操作未获确认。正在重新查询本机状态。");
+    return;
+  } finally {
+    controlBusy = false;
+  }
+  renderDetection(lastReading);
+});
+
 async function refreshStudent() {
+  const version = requestVersion;
   try {
     const response = await fetch("/api/state", {cache: "no-store", signal: AbortSignal.timeout(3000)});
     if (!response.ok) throw new Error("Could not read seat state");
-    lastReading = await response.json();
+    const reading = await response.json();
+    if (version !== requestVersion || controlBusy) return;
+    lastReading = reading;
     renderStudent(lastReading);
+    renderDetection(lastReading);
   } catch {
+    if (version !== requestVersion || controlBusy) return;
     renderStudent({...lastReading, phase: "offline"});
+    renderDetection({detector: "offline"});
   } finally {
     setTimeout(refreshStudent, document.hidden ? 1600 : 400);
   }

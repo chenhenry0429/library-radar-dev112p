@@ -11,6 +11,14 @@ h1 { font-size:clamp(2.1rem,4.5vw,3.1rem); line-height:1.13; letter-spacing:-.03
 .feed::before, .legend i { content:""; display:inline-block; width:.55rem; height:.55rem; border-radius:50%; background:#458568; flex:none; }
 .feed[data-tone="waiting"] { background:#f8e9ca; color:#694916; }
 .feed[data-tone="waiting"]::before { background:#ac771c; }
+.detection { display:flex; flex-wrap:wrap; align-items:center; gap:.65rem 1rem; margin-bottom:1.15rem; }
+.detection button { display:inline-flex; align-items:center; justify-content:center; gap:.55rem; min-height:2.75rem; padding:.55rem 1rem; border:1px solid #17513e; border-radius:.55rem; background:#17513e; color:white; font:inherit; font-weight:700; cursor:pointer; }
+.detection button:hover:not(:disabled) { background:#244638; }
+.detection button:focus-visible { outline:2px solid #193b2f; outline-offset:3px; }
+.detection button:disabled { opacity:.6; cursor:default; }
+.detect-icon { width:0; height:0; border:.38rem solid transparent; border-left:.6rem solid currentColor; border-right:0; }
+.detection button[data-action="stop"] .detect-icon { width:.62rem; height:.62rem; border:0; border-radius:.08rem; background:currentColor; }
+.detection p { color:#435c4e; font-size:.9rem; }
 .cards { display:grid; grid-template-columns:1.25fr 1fr; gap:1rem; align-items:stretch; }
 .card { border-radius:1.15rem; border:1px solid #d5e3d7; padding:1.5rem 1.7rem 1.55rem; min-width:0; }
 .seat { background:#17513e; color:white; min-height:21rem; }

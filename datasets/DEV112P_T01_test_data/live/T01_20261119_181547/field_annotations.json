@@ -1,0 +1,16 @@
+{
+  "recording_id": "T01_20261119_181547",
+  "stopwatch_unit": "seconds",
+  "stopwatch_to_radar_offset_s": null,
+  "actions": [
+    {
+      "time_s": 31.03,
+      "event": "坐稳"
+    },
+    {
+      "time_s": 62.35,
+      "event": "走远"
+    }
+  ],
+  "field_observations": {}
+}

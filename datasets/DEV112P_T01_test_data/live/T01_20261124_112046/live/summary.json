@@ -1,0 +1,9 @@
+{
+  "source_recording_id": "DEV112P_38bc1d296bf6431db7e554485592e1a9",
+  "recorded_live_A_frames": 490,
+  "recorded_live_A_last_frame": 489,
+  "recorded_B_frame_groups": 500,
+  "timestamp_source": "nominal_device_counter",
+  "algorithm_version": "M1 v1.2.1 + online v0.1",
+  "replay_rows_match_live_prefix": true
+}

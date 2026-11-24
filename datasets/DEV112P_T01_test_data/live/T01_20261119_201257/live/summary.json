@@ -1,0 +1,9 @@
+{
+  "source_recording_id": "T01_http_live_20261119_201257_965862",
+  "recorded_live_A_frames": 484,
+  "recorded_live_A_last_frame": 483,
+  "recorded_B_frame_groups": 484,
+  "timestamp_source": "nominal_device_counter",
+  "algorithm_version": "M1 v1.2 + online v0.1",
+  "replay_rows_match_live_prefix": false
+}

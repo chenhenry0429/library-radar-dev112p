@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "T01_20261124_113509",
+  "seat_id": "T01",
+  "source_kind": "measured",
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": "nominal_device_counter",
+  "data_level": "1dfft",
+  "raw_shape": [
+    1,
+    8
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "range_bin"
+  ],
+  "shape_scope": "one projected frame",
+  "installation": {
+    "region_bins": [
+      1,
+      3
+    ],
+    "main_bin": 2
+  },
+  "radar_config": {
+    "nominal_frame_period_s": 0.1935,
+    "nominal_frame_rate_hz": 5.167958656330749,
+    "tx_polling": 1,
+    "range_bin_distance_m": null,
+    "chirp_to_physical_tx_mapping": null
+  }
+}

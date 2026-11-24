@@ -1,0 +1,273 @@
+{
+  "archive_format": "dev112p_decoded_1dfft_archive",
+  "archive_version": 1,
+  "new_replay_code_commit": "d58edc8",
+  "new_replay_algorithm_source": "9c34389",
+  "recording_count": 24,
+  "recordings": [
+    {
+      "recording_id": "T01_P01_R01",
+      "path": "formal/T01_P01_R01",
+      "frame_groups": 840,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "f0f39935f71717f9de8890232ef9ba4fffd5a69e5a0f7f6e1f3e5445674d3d94",
+      "group": "formal",
+      "description": "P01 正式坐姿流程"
+    },
+    {
+      "recording_id": "T01_P02_R01",
+      "path": "formal/T01_P02_R01",
+      "frame_groups": 801,
+      "actual_action_mark_count": 6,
+      "source_dat_sha256": "fd3142a40bdcbc526697d46e87d35e5f01d217cd384754ce5f9991f56c1b5577",
+      "group": "formal",
+      "description": "P02 正式坐姿流程"
+    },
+    {
+      "recording_id": "T01_P03_R01",
+      "path": "formal/T01_P03_R01",
+      "frame_groups": 797,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "5cab878c5efb889bba38e9721894bebedd00f69b4a2f32f47af29fb1a462f520",
+      "group": "formal",
+      "description": "P03 正式坐姿流程"
+    },
+    {
+      "recording_id": "T01_P04_R01",
+      "path": "formal/T01_P04_R01",
+      "frame_groups": 807,
+      "actual_action_mark_count": 6,
+      "source_dat_sha256": "cd95aeb69998168b058ed16de25ee876d8544aa1050d0fdb81fd1d49a4440f98",
+      "group": "formal",
+      "description": "P04 正式坐姿流程"
+    },
+    {
+      "recording_id": "T01_neighbor_R01",
+      "path": "formal/T01_neighbor_R01",
+      "frame_groups": 323,
+      "actual_action_mark_count": 3,
+      "source_dat_sha256": "9892c5a629650354918d72e4813f06054d73dd7f72c1adc932fe743a68897e2b",
+      "group": "formal",
+      "description": "邻座活动，目标座全程空着"
+    },
+    {
+      "recording_id": "T01_aisle_R01",
+      "path": "formal/T01_aisle_R01",
+      "frame_groups": 313,
+      "actual_action_mark_count": 5,
+      "source_dat_sha256": "0c4bac0feb1cdaf0f0cc47de68e9a954a446ef70a83ca1df5ff27ead9e0a8f4e",
+      "group": "formal",
+      "description": "过道走动，目标座全程空着"
+    },
+    {
+      "recording_id": "T01_P02_retest",
+      "path": "retests/T01_P02_retest",
+      "frame_groups": 497,
+      "actual_action_mark_count": 5,
+      "source_dat_sha256": "8c4dc4848bb7a2a67d0d9d1b1e88d2125488c01ba9bf90980438233478472bbc",
+      "group": "retests",
+      "description": "P02 短复测"
+    },
+    {
+      "recording_id": "T01_P04_retest",
+      "path": "retests/T01_P04_retest",
+      "frame_groups": 504,
+      "actual_action_mark_count": 5,
+      "source_dat_sha256": "a7854cb4dcae25911058d915d95aa8d5cae6e50cae7e83b057748daf6a84e66f",
+      "group": "retests",
+      "description": "P04 短复测"
+    },
+    {
+      "recording_id": "T01_chair_shift",
+      "path": "retests/T01_chair_shift",
+      "frame_groups": 577,
+      "actual_action_mark_count": 4,
+      "source_dat_sha256": "1df66e6175a6a8aaee69c5a1cf9c90ff0c09ce9b421b5704c01d6814dd427d6e",
+      "group": "retests",
+      "description": "空椅移位对照"
+    },
+    {
+      "recording_id": "pilot_01",
+      "path": "pilot/pilot_01",
+      "frame_groups": 349,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "637a98187329490b7d213029acdb57e2263691f42641990885dbbb446c3e8256",
+      "group": "pilot",
+      "description": "首次非正式试采"
+    },
+    {
+      "recording_id": "short_01",
+      "path": "pilot/short_01",
+      "frame_groups": 113,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "ed58f989eb98c959ae8b7d88dd8da83d156468bae3bd7c7bf79cac4b5d37fcf4",
+      "group": "pilot",
+      "description": "复测前短录制（有缺帧）"
+    },
+    {
+      "recording_id": "short_02",
+      "path": "pilot/short_02",
+      "frame_groups": 54,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "0353a6e383a6054854fc4c9f3a55eec95482d7b4035e76ac910ac78e834ec81b",
+      "group": "pilot",
+      "description": "空椅对照前短录制"
+    },
+    {
+      "recording_id": "T01_20261119_180310",
+      "path": "live/T01_20261119_180310",
+      "frame_groups": 433,
+      "actual_action_mark_count": 2,
+      "source_dat_sha256": "94516c59a38ec4cfb61b944747b772127ba273f067707972b07b3f93eae859e2",
+      "description": "原位置短测，沿用此前约 60 厘米摆位，本轮未重新量距",
+      "group": "live",
+      "scenario": "geometry_comparison",
+      "uniform_replay": "live/T01_20261119_180310/replay/T01_20261119_180310_result.csv",
+      "A_live_frame_count": null,
+      "c_m1_parity": "live/T01_20261119_180310/c_input/T01_20261119_180310_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261119_181528",
+      "path": "live/T01_20261119_181528",
+      "frame_groups": 18,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "090c3c0d6507cb9ccc655d5228b9541fb5327fbd0e93df6247d2a93ec3626511",
+      "description": "近距离对照前启停试录，动作时间未记",
+      "group": "live",
+      "scenario": "start_stop_probe",
+      "uniform_replay": "live/T01_20261119_181528/replay/T01_20261119_181528_result.csv",
+      "A_live_frame_count": null,
+      "c_m1_parity": "live/T01_20261119_181528/c_input/T01_20261119_181528_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261119_181540",
+      "path": "live/T01_20261119_181540",
+      "frame_groups": 18,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "9c010c38223fb619a574f7b25cc0bd8059d48aaf114cb286bd5509fbe1f81be4",
+      "description": "近距离对照前第二段启停试录，动作时间未记",
+      "group": "live",
+      "scenario": "start_stop_probe",
+      "uniform_replay": "live/T01_20261119_181540/replay/T01_20261119_181540_result.csv",
+      "A_live_frame_count": null,
+      "c_m1_parity": "live/T01_20261119_181540/c_input/T01_20261119_181540_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261119_181547",
+      "path": "live/T01_20261119_181547",
+      "frame_groups": 446,
+      "actual_action_mark_count": 2,
+      "source_dat_sha256": "9a620c368de4ec92fdd4fe6323d1f5c9c2db17a70a24961bd4ee7ec5ce360d08",
+      "description": "实际胸口距离 20 厘米对照",
+      "group": "live",
+      "scenario": "geometry_comparison",
+      "uniform_replay": "live/T01_20261119_181547/replay/T01_20261119_181547_result.csv",
+      "A_live_frame_count": null,
+      "c_m1_parity": "live/T01_20261119_181547/c_input/T01_20261119_181547_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261119_201257",
+      "path": "live/T01_20261119_201257",
+      "frame_groups": 484,
+      "actual_action_mark_count": 2,
+      "source_dat_sha256": "f5ec3465fe48e86dbe44d89b179585afeb065841c25df8e581fbfe0029deaa49",
+      "description": "484 帧 A/B/C 现场联调",
+      "group": "live",
+      "scenario": "field_integration",
+      "uniform_replay": "live/T01_20261119_201257/replay/T01_20261119_201257_result.csv",
+      "A_live_frame_count": 484,
+      "c_m1_parity": "live/T01_20261119_201257/c_input/T01_20261119_201257_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261123_201242",
+      "path": "live/T01_20261123_201242",
+      "frame_groups": 1031,
+      "actual_action_mark_count": 2,
+      "source_dat_sha256": "9dbadbcc23c78a211bd76e1123fa5defdb85d7f5c3bb7fee742b1bd8961048c7",
+      "description": "1,031 帧离座倒计时中断复现，走远后是否有干扰未记录",
+      "group": "live",
+      "scenario": "countdown_interruption",
+      "uniform_replay": "live/T01_20261123_201242/replay/T01_20261123_201242_result.csv",
+      "A_live_frame_count": 1031,
+      "c_m1_parity": "live/T01_20261123_201242/c_input/T01_20261123_201242_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261123_201641",
+      "path": "live/T01_20261123_201641",
+      "frame_groups": 114,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "59b5c84fda41897ff8a9a4822cc23ad251954b39a130acbbf8a12780e73afc79",
+      "description": "晚间短录，现场动作未标注",
+      "group": "live",
+      "scenario": "short_unlabelled",
+      "uniform_replay": "live/T01_20261123_201641/replay/T01_20261123_201641_result.csv",
+      "A_live_frame_count": null,
+      "c_m1_parity": "live/T01_20261123_201641/c_input/T01_20261123_201641_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261124_111825",
+      "path": "live/T01_20261124_111825",
+      "frame_groups": 285,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "1adb5820fbdadbf34cc6351c60567ff57386346ba12ddb2df6f8cde65e64de3a",
+      "description": "A v0.5.0 一键启停，覆盖空座与入座，现场动作时间未记",
+      "group": "live",
+      "scenario": "button_smoke",
+      "uniform_replay": "live/T01_20261124_111825/replay/T01_20261124_111825_result.csv",
+      "A_live_frame_count": 275,
+      "c_m1_parity": "live/T01_20261124_111825/c_input/T01_20261124_111825_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261124_112046",
+      "path": "live/T01_20261124_112046",
+      "frame_groups": 500,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "77d1bc0de5f25a1692e2ca3dfd5060eac040d2b0ee1c1afee54e4db72d1c4fa2",
+      "description": "离座后无人回座，现场报告有人员靠近或桌椅移动，倒计时取消",
+      "group": "live",
+      "scenario": "interference_reentry",
+      "uniform_replay": "live/T01_20261124_112046/replay/T01_20261124_112046_result.csv",
+      "A_live_frame_count": 490,
+      "c_m1_parity": "live/T01_20261124_112046/c_input/T01_20261124_112046_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261124_113509",
+      "path": "live/T01_20261124_113509",
+      "frame_groups": 14,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "d43a8b989356ec2102a794db02b3f066bec58e9088176c447f90594b30ae276f",
+      "description": "极短启停试录，现场动作未标注",
+      "group": "live",
+      "scenario": "start_stop_probe",
+      "uniform_replay": "live/T01_20261124_113509/replay/T01_20261124_113509_result.csv",
+      "A_live_frame_count": 5,
+      "c_m1_parity": "live/T01_20261124_113509/c_input/T01_20261124_113509_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261124_113521",
+      "path": "live/T01_20261124_113521",
+      "frame_groups": 481,
+      "actual_action_mark_count": 0,
+      "source_dat_sha256": "e0afc9f428d15da63ccee5a1cb0039056a61d20e67e65d8ccd9252cd6284773d",
+      "description": "A v0.5.0 短录，现场动作未标注",
+      "group": "live",
+      "scenario": "short_unlabelled",
+      "uniform_replay": "live/T01_20261124_113521/replay/T01_20261124_113521_result.csv",
+      "A_live_frame_count": 472,
+      "c_m1_parity": "live/T01_20261124_113521/c_input/T01_20261124_113521_parity_raw.npz"
+    },
+    {
+      "recording_id": "T01_20261124_113708",
+      "path": "live/T01_20261124_113708",
+      "frame_groups": 849,
+      "actual_action_mark_count": 1,
+      "source_dat_sha256": "c3fb24b8ba3eef9c3a50ea01fd650a8454f838af3264936c99d61512ac4edf02",
+      "description": "完整倒计时和释放，含秒表记录",
+      "group": "live",
+      "scenario": "countdown_completed",
+      "uniform_replay": "live/T01_20261124_113708/replay/T01_20261124_113708_result.csv",
+      "A_live_frame_count": 840,
+      "c_m1_parity": "live/T01_20261124_113708/c_input/T01_20261124_113708_parity_raw.npz"
+    }
+  ]
+}

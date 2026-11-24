@@ -1,0 +1,10 @@
+{
+  "recording_id": "T01_20261124_112046",
+  "stopwatch_unit": "seconds",
+  "stopwatch_to_radar_offset_s": null,
+  "actions": [],
+  "field_observations": {
+    "after_departure": "无人回坐，有人靠近或桌椅有移动",
+    "delay_anchor": "点开始检测后到首次确认座位状态"
+  }
+}

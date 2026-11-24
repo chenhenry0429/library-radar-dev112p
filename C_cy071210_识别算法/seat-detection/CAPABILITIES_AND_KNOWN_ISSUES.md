@@ -12,6 +12,7 @@
 | 离座判空（R3） | ✅ Bin1 微动回到空座带 5 s + F1 稳定性否决 → 判空并重建快照 | `algos/m1_v121.py` |
 | 验收结果（9 组真实 + 484 现场抓包） | 开场误报 341/341→11/341（3%，全部在 484 坐稳前 2 s）；静坐保持 99%；全空组 532/532→0/532；走远判空 4/8（9.0–10.1 s） | `../outputs/v1.2.1/v1.2.1_comparison.md` |
 | 484 帧现场抓包 | ✅ 0→1 于 27.48 s（坐稳 29.48 前 2.0 s）、1→0 于 67.53 s（走远 58.06 后 9.5 s）；修复前的 11.61 s 误判消失 | `examples/live_v121/`；`../outputs/v1.2.1/live-484/` |
+| 现场入口（2026-11-24） | ✅ B 的 JSONL DevFrame → `SeatDetector.feed_dev112p` → A 九字段串行 POST；每轮帧 0 起；`--emit-algorithm` 生成/校验 A 启动文件；退出时终止 B 子进程并落盘 | `tools/radar_field.py`；`tools/selftest_field.py`（CI）；真实归档 504 帧与离线 presence/timestamp 一致 |
 | 在线/离线一致性 | ✅ 逐字节一致（result.csv + scores.csv） | `tools/live_seat.py --expect` |
 
 设计要点：F1 由绝对 dB 改为**泄漏归一残差**（`|X|/|X0|`，消除 2.9× 基数差与热漂移）；

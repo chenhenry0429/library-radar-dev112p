@@ -24,6 +24,7 @@ Thumbs.db
 /private-data/
 /work/
 /tmp/
+*_selftest_tmp/
 /DEMO_ONLY/*
 !/DEMO_ONLY/release_demo/
 *.lic

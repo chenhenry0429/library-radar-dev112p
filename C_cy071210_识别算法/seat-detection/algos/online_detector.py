@@ -113,11 +113,25 @@ class SeatDetector:
         shape = meta.get("raw_shape")
         if not (isinstance(shape, (list, tuple)) and len(shape) >= 2):
             raise ValueError(f"meta.raw_shape invalid for 1dfft: {shape!r}")
-        nb = int(shape[-1])
+        # range 轴长度：优先按 axis_order 里的 range 轴取（现场握手 meta 可能是
+        # B 的单帧立方 [chip,rx,chirp,range_fft_bin,iq]，末位是 iq=2 而不是 bin 数）
+        order = [str(a).lower() for a in (meta.get("axis_order") or [])]
+        nb_idx = None
+        for name in ("range_bin", "range_fft_bin"):
+            if name in order:
+                nb_idx = order.index(name)
+                break
+        if nb_idx is not None and nb_idx < len(shape):
+            nb = int(shape[nb_idx])
+        else:
+            nb = int(shape[-1])
         dtype_name = str(meta.get("raw_dtype") or "").lower()
         if not dtype_name:
             raise ValueError("meta.raw_dtype missing -- cannot decide complex/real mode")
-        complex_input = dtype_name.startswith("complex")
+        # B 的单帧立方（含 iq_component 轴）经 feed_dev112p 投影后是复数剖面，
+        # 即使 meta.raw_dtype=int16 也按复数模式跑；否则会误入实数退化路径。
+        cube_meta = "iq_component" in order
+        complex_input = dtype_name.startswith("complex") or cube_meta
 
         if frame_period_s is None:
             rc = meta.get("radar_config") or {}

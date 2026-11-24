@@ -67,11 +67,33 @@ def select_chain(z, am, chip, rx):
 
 
 def chirp_mean(x, v):
-    """1dfft：valid chirp 复均值 → [F, 8] complex64。"""
+    """1dfft：valid chirp 复均值 → [F, 8] complex64（v1.2 旧口径）。"""
     f, n_ch, n_b = x.shape
     w = v.astype(np.float32)[:, :, None]                    # (F, 64, 1)
     acc = (x * w).sum(axis=1)                               # (F, 8)
     return (acc / v.sum(axis=1)[:, None]).astype(np.complex64)
+
+
+def chirp_split(x, v):
+    """1dfft：奇/偶 chirp 各自复均值 → [F, 2, 8] complex64（v1.2.1 口径）。
+
+    tx_polling=1 时奇/偶 chirp 走不同发射通道，幅度相差 ~11×
+    （T01 实测奇 ≈16200 / 偶 ≈1450 counts）。把两者平均会：
+      * 让背景幅度取决于该帧的奇偶配比（frame 0 只有 27/26 → +139 counts 种子偏置）；
+      * 把相差 11× 的两种传播路径混在一起。
+    分开后每条链各自标定，部分帧的缺 chirp 不再改变另一条链的均值。
+    返回的 parity 轴顺序：0 = 偶 chirp（chirp 序号 0,2,4…），1 = 奇 chirp。
+    """
+    f, n_ch, n_b = x.shape
+    parity = np.arange(n_ch) % 2                            # 0=even index, 1=odd index
+    out = np.zeros((f, 2, n_b), dtype=np.complex64)
+    for p in (0, 1):
+        mask = (parity == p)[None, :] & v
+        w = mask.astype(np.float32)[:, :, None]
+        cnt = mask.sum(axis=1)[:, None]
+        acc = (x * w).sum(axis=1)
+        out[:, p, :] = np.where(cnt > 0, acc / np.maximum(cnt, 1), 0.0)
+    return out
 
 
 def chirp_fft(x, v):
@@ -82,7 +104,7 @@ def chirp_fft(x, v):
 
 
 def build_meta(rid, am, chip, rx, data_level, axis_order, shape, post_note,
-               region_bins, main_bin):
+               region_bins, main_bin, iq_note=None):
     rc = dict(am.get("radar_config") or {})
     rc = {
         "nominal_frame_period_s": rc.get("nominal_frame_period_s"),
@@ -122,13 +144,14 @@ def build_meta(rid, am, chip, rx, data_level, axis_order, shape, post_note,
         "axis_order": axis_order,
         "value_unit": "device_fft_counts",
         "iq_representation": (
-            "complex64 I/Q (device 1dfft output, valid-chirp merged mean); no DC removal applied"
-            if data_level == "1dfft" else
-            "complex64 I/Q (device 2dfft output, zero-filled missing chirps in partial frames 0/839); "
-            "no DC removal applied"
-        ),
+            iq_note or
+            ("complex64 I/Q (device 1dfft output, valid-chirp merged mean); no DC removal applied"
+             if data_level == "1dfft" else
+             "complex64 I/Q (device 2dfft output, zero-filled missing chirps in partial frames 0/839); "
+             "no DC removal applied")),
         "nominal_frame_rate_hz": am["radar_config"]["nominal_frame_rate_hz"],
         "radar_config": rc,
+        "annotation": am.get("annotation"),
         "installation": {
             "position": ("field trial seat T01; no geometric calibration "
                          "(range bins uncalibrated); radar-to-chest ~60 cm per "
@@ -165,6 +188,12 @@ def main():
     ap.add_argument("--main-bin", type=int, default=2,
                     help="installation.main_bin for meta (pilot signal-calibrated)")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(HERE), "examples", "real"))
+    ap.add_argument("--parity", choices=["mean", "split"], default="mean",
+                    help="1dfft chirp merge: 'mean' = v1.2 single profile (default, "
+                         "backward compatible); 'split' = v1.2.1 odd/even separate "
+                         "profiles [frame, parity, range]")
+    ap.add_argument("--skip-2dfft", action="store_true",
+                    help="do not emit the (large) 2dfft recording (v1.2.1 1dfft only)")
     a = ap.parse_args()
 
     region_bins = [int(v) for v in a.region_bins.split(",")]
@@ -178,34 +207,51 @@ def main():
     base_rid = f"{am['recording_id']}_c{a.chip}r{a.rx}"
 
     # 1dfft（M1 输入）
-    x1 = chirp_mean(x, v)
-    rid1 = f"{base_rid}_1dfft"
-    np.savez(os.path.join(a.out, f"{rid1}_raw.npz"),
-             timestamps=ts, frame_ids=fids, raw_data=x1)
-    m1 = build_meta(rid1, am, a.chip, a.rx, "1dfft",
-                    ["frame", "range_bin"], x1.shape,
-                    {"chip_rx_selected": [a.chip, a.rx],
-                     "chirp_merge": "complex mean over valid chirps"},
-                    region_bins, a.main_bin)
+    if a.parity == "split":
+        x1 = chirp_split(x, v)
+        rid1 = f"{base_rid}_1dfft_parity"
+        np.savez(os.path.join(a.out, f"{rid1}_raw.npz"),
+                 timestamps=ts, frame_ids=fids, raw_data=x1)
+        m1 = build_meta(rid1, am, a.chip, a.rx, "1dfft",
+                        ["frame", "chirp_parity", "range_bin"], x1.shape,
+                        {"chip_rx_selected": [a.chip, a.rx],
+                         "chirp_merge": "odd/even chirp split: complex mean per parity "
+                                        "(parity 0 = chirp index 0,2,4..., parity 1 = 1,3,5...)"},
+                        region_bins, a.main_bin,
+                        iq_note=("complex64 I/Q (device 1dfft output, odd/even chirp "
+                                 "means kept separate for v1.2.1); no DC removal applied"))
+    else:
+        x1 = chirp_mean(x, v)
+        rid1 = f"{base_rid}_1dfft"
+        np.savez(os.path.join(a.out, f"{rid1}_raw.npz"),
+                 timestamps=ts, frame_ids=fids, raw_data=x1)
+        m1 = build_meta(rid1, am, a.chip, a.rx, "1dfft",
+                        ["frame", "range_bin"], x1.shape,
+                        {"chip_rx_selected": [a.chip, a.rx],
+                         "chirp_merge": "complex mean over valid chirps"},
+                        region_bins, a.main_bin)
     with open(os.path.join(a.out, f"{rid1}_meta.json"), "w", encoding="utf-8") as f:
         json.dump(m1, f, ensure_ascii=False, indent=2)
 
     # 2dfft（B0 输入）
-    x2 = chirp_fft(x, v)
-    rid2 = f"{base_rid}_2dfft"
-    np.savez(os.path.join(a.out, f"{rid2}_raw.npz"),
-             timestamps=ts, frame_ids=fids, raw_data=x2)
-    m2 = build_meta(rid2, am, a.chip, a.rx, "2dfft",
-                    ["frame", "doppler_bin", "range_bin"], x2.shape,
-                    {"chip_rx_selected": [a.chip, a.rx],
-                     "chirp_merge": "64-point FFT over chirp axis, DC at doppler "
-                                    "bin 0 (no fftshift); missing chirps zero-filled"},
-                    region_bins, a.main_bin)
-    with open(os.path.join(a.out, f"{rid2}_meta.json"), "w", encoding="utf-8") as f:
-        json.dump(m2, f, ensure_ascii=False, indent=2)
+    x2 = None
+    if not a.skip_2dfft:
+        x2 = chirp_fft(x, v)
+        rid2 = f"{base_rid}_2dfft"
+        np.savez(os.path.join(a.out, f"{rid2}_raw.npz"),
+                 timestamps=ts, frame_ids=fids, raw_data=x2)
+        m2 = build_meta(rid2, am, a.chip, a.rx, "2dfft",
+                        ["frame", "doppler_bin", "range_bin"], x2.shape,
+                        {"chip_rx_selected": [a.chip, a.rx],
+                         "chirp_merge": "64-point FFT over chirp axis, DC at doppler "
+                                        "bin 0 (no fftshift); missing chirps zero-filled"},
+                        region_bins, a.main_bin)
+        with open(os.path.join(a.out, f"{rid2}_meta.json"), "w", encoding="utf-8") as f:
+            json.dump(m2, f, ensure_ascii=False, indent=2)
 
     # 输出自检摘要
-    for rid, X in ((rid1, x1), (rid2, x2)):
+    pairs = [(rid1, x1)] + ([] if x2 is None else [(rid2, x2)])
+    for rid, X in pairs:
         finite = np.isfinite(X.view(np.float32)).all()
         print(f"{rid}: shape={X.shape} dtype={X.dtype} "
               f"abs_max={np.abs(X).max():.1f} finite={finite}")

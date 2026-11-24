@@ -1,0 +1,84 @@
+{
+  "recording_id": "T01_http_live_20261123_201242_733416",
+  "frames": 1031,
+  "online_rows_exactly_reproduced": true,
+  "time_axis": "nominal radar seconds, stopwatch offset unmeasured",
+  "entry_ratio": 4.0,
+  "release_ratio": 1.45,
+  "comparison": {
+    "ab409fd": {
+      "transitions": [
+        {
+          "frame_id": 0,
+          "nominal_time_s": 0.0,
+          "presence": 0,
+          "m": 0.0,
+          "m_fast": 0.0,
+          "motion_floor_after_frame": null
+        },
+        {
+          "frame_id": 111,
+          "nominal_time_s": 21.4785,
+          "presence": 1,
+          "m": 20.40063157549848,
+          "m_fast": 14.84174799308157,
+          "motion_floor_after_frame": 0.009313738206694644
+        },
+        {
+          "frame_id": 538,
+          "nominal_time_s": 104.103,
+          "presence": 0,
+          "m": 1.1334547222568192,
+          "m_fast": 1.4484374654561851,
+          "motion_floor_after_frame": 0.008132561645196486
+        },
+        {
+          "frame_id": 574,
+          "nominal_time_s": 111.069,
+          "presence": 1,
+          "m": 7.917665172010159,
+          "m_fast": 10.446081636211668,
+          "motion_floor_after_frame": 0.00880301648213215
+        }
+      ],
+      "tail_presence": 1
+    },
+    "background_updates_during_wait": {
+      "transitions": [
+        {
+          "frame_id": 0,
+          "nominal_time_s": 0.0,
+          "presence": 0,
+          "m": 0.0,
+          "m_fast": 0.0,
+          "motion_floor_after_frame": null
+        },
+        {
+          "frame_id": 111,
+          "nominal_time_s": 21.4785,
+          "presence": 1,
+          "m": 20.246783255553947,
+          "m_fast": 14.729821164477002,
+          "motion_floor_after_frame": 0.009384510089685496
+        },
+        {
+          "frame_id": 538,
+          "nominal_time_s": 104.103,
+          "presence": 0,
+          "m": 1.1249069425419085,
+          "m_fast": 1.4375142903681752,
+          "motion_floor_after_frame": 0.008132561645196486
+        },
+        {
+          "frame_id": 574,
+          "nominal_time_s": 111.069,
+          "presence": 1,
+          "m": 7.917665172010159,
+          "m_fast": 10.446081636211668,
+          "motion_floor_after_frame": 0.00880301648213215
+        }
+      ],
+      "tail_presence": 1
+    }
+  }
+}

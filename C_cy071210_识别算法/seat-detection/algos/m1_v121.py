@@ -82,7 +82,7 @@ class M1V121State:
     __slots__ = (
         # 参数
         "entry_ratio", "entry_confirm", "release_ratio", "release_frames",
-        "win_slow", "win_fast", "motion_bin", "floor_alpha",
+        "win_slow", "win_fast", "motion_bin", "floor_alpha", "floor_min_ratio",
         "calib_s", "calib_min_frames", "warmup_guard", "floor_pct",
         "f1_db_floor", "f1_db_span", "f1_gate", "f1_entry_support", "f1_ref_alpha",
         "f1_entry_enabled", "f1_change_max_db",
@@ -101,7 +101,7 @@ class M1V121State:
         "act_slow_hist", "act_fast_hist",
         # 标定
         "calib_amp_sum", "calib_cnt", "calib_done", "calib_act", "calib_f1", "bg_amp",
-        "calib_end_ts",
+        "calib_end_ts", "floor_calib",
         "valid_frames", "floor", "f1_ref_db",
         # 判决
         "state", "cand", "cand_state", "empty_run", "snap_events",
@@ -118,6 +118,7 @@ class M1V121State:
         self.win_fast = float(_get(cfg, ["micro_motion", "fast_window_s"], 4.0))
         self.motion_bin = int(_get(cfg, ["micro_motion", "bin"], 1))
         self.floor_alpha = float(_get(cfg, ["micro_motion", "floor_alpha"], 0.02))
+        self.floor_min_ratio = float(_get(cfg, ["micro_motion", "floor_min_ratio"], 0.8))
         self.calib_s = float(_get(cfg, ["calibration", "empty_accumulate_s"], 10.0))
         self.calib_min_frames = max(1, int(_get(cfg, ["calibration", "min_valid_frames"], 40)))
         self.warmup_guard = float(_get(cfg, ["calibration", "warmup_guard_s"], 6.0))
@@ -182,6 +183,7 @@ class M1V121State:
         self.bg_amp = np.zeros((self.n_parity, self.nb), dtype=np.float64)
         self.valid_frames = 0
         self.floor = None
+        self.floor_calib = None
         self.f1_ref_db = None
         # 判决
         self.state = 0
@@ -201,6 +203,7 @@ class M1V121State:
         self.bg_amp = self.calib_amp_sum / k
         acts = [v for v in self.calib_act if v > 0]
         self.floor = max(float(np.percentile(acts, self.floor_pct)), 1e-6) if acts else 1e-3
+        self.floor_calib = self.floor
         # F1 参考：用刚建立的背景回算标定帧的泄漏归一残差（标定期 bg 尚未建立，
         # 逐帧累计的 calib_f1 全为 0，不能用作参考）
         qs = np.stack([np.asarray(self.q_amp_hist[p]) for p in range(self.n_parity)], axis=1)
@@ -376,6 +379,10 @@ class M1V121State:
         if self.state == 0 and m <= self.release_ratio:
             self.floor = (1.0 - self.floor_alpha) * self.floor \
                 + self.floor_alpha * max(m_slow, 1e-6)
+            if self.floor_calib:
+                # 噪声底不得低于标定空座水平太多：底越低 m 越敏感，安静段
+                # 漂低后任何小扰动都会被放大成“入场”（1,031 帧现场复盘项）。
+                self.floor = max(self.floor, self.floor_calib * self.floor_min_ratio)
             if self.f1_ref_db is not None:
                 self.f1_ref_db = (1.0 - self.f1_ref_alpha) * self.f1_ref_db \
                     + self.f1_ref_alpha * float(f1_db)
@@ -447,7 +454,10 @@ class M1V121State:
         for p in range(self.n_parity):
             acts.extend(a for a in self.act_slow_hist[p][lo:] if a > 0)
         if acts:
-            self.floor = max(float(np.percentile(acts, 50.0)), 1e-6)
+            floor_new = max(float(np.percentile(acts, 50.0)), 1e-6)
+            if self.floor_calib:
+                floor_new = max(floor_new, self.floor_calib * self.floor_min_ratio)
+            self.floor = floor_new
         if self.f1db_trace:
             self.f1_ref_db = float(self.f1db_trace[-1])
         self.snap_events += 1

@@ -23,7 +23,8 @@
     "entry_confirm_frames": 8,
     "release_ratio": 1.45,
     "release_frames": 26,
-    "floor_alpha": 0.02
+    "floor_alpha": 0.02,
+    "floor_min_ratio": 0.8
   },
   "f1": {
     "normalization": "leakage_ratio",

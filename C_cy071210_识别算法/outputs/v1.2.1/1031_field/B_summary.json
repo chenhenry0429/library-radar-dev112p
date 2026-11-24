@@ -1,0 +1,1 @@
+{"recording_id":"T01_http_live_20261123_201242_733416","reason":"operator_stop","frames":1031,"source_bytes":13720128,"counts":{"valid_packets":263824,"aux_wrappers":80,"partial_frames":2,"complete_frames":1029},"events":{"session_started":1,"group_timeout":1,"source_stalled":1,"session_ended":1}}

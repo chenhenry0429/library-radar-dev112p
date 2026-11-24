@@ -2,7 +2,26 @@
 
 负责人：[@chenhenry0429](https://github.com/chenhenry0429) · [全组成果看板](../WORK_STATUS.md)
 
-## 已有成果与文件位置
+## DEV112P 实时联调
+
+[采集和解码入口](dev112p_live/a_device_bridge.py) 使用 ONELAB 正在写入的 1DFFT 文件。现场在 ONELAB 选择已验证的 COM5 设备和保存目录。A 点「开始检测」后启动 B、C，再在 ONELAB 点「开始」。结束时先在 ONELAB 点「停止」，再在 A 点「停止检测」，使桥接程序保存本轮原始数据和日志。
+
+使用安装了仓库依赖的 Python 3.12，在仓库根目录运行下面的命令。将参数替换为采集电脑上的路径，并使用 C 的 `9c34389` 版本。
+
+```powershell
+python -X utf8 .\B_chenhenry0429_雷达与采集\dev112p_live\a_device_bridge.py `
+  --recordings "<ONELAB 保存目录>" --output "<实时结果目录>" `
+  --c-root "<C 的 seat-detection 目录>" --config "<C 的 M1_dev112p_v1.2.1.json>" `
+  --device-config ".\A_stone140_应用与业务\radar_device.local.json" `
+  --reference-ini "<已验证录制中的 FILE_Radar_Config.ini>"
+python -X utf8 .\A_stone140_应用与业务\live_monitor.py --port 8766
+```
+
+打开 `http://127.0.0.1:8766/` 的「使用者」页。首次等待窗口为 60 秒。每次启动生成新录制编号，B 保留原始流、有效 chirp 掩码和设备帧号。C 使用既有九字段接口串行向 A 发送并等待回执。结果目录下的 `A_delivery.json` 记录 B 保存帧数和 A 接收帧数。
+
+时间轴使用从首帧起按设备计数推算的名义相对秒。B 同时记录主机文件读取观测时间。现场动作秒表与雷达首帧的偏移需要单独测量。
+
+## 离线处理
 
 | 成果 | 唯一运行文件 |
 |---|---|
@@ -13,7 +32,7 @@
 | 配置模板 | [meta_template.json](../meta_template.json) |
 | 操作手册与接收说明 | [PDF](../docs/operation-manual.pdf)、[组员接收说明](../README_组员离线读取.txt) |
 
-这些工具属于仓库初始公共基线，保留在根目录以兼容既有命令和离线交付包。本目录负责把 B 的工作、位置和验收集中展示，不另复制一套程序。
+这些工具属于仓库初始公共基线，保留在根目录以兼容既有命令和离线交付包。
 
 ## 下一步：设备到货前
 

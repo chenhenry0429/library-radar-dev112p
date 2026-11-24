@@ -1,4 +1,4 @@
-# A 端实时入口 v0.3.0
+# A 端实时入口 v0.4.0
 
 ## 启动本机演示
 
@@ -11,6 +11,24 @@ python live_monitor.py
 ```
 
 默认使用仓库 `DEMO_ONLY/release_demo` 下的合成录制。也可用 `--replay 路径_result.csv` 指定既有 C 结果，默认查找同目录、同前缀的 `_meta.json` 和 `_algorithm.json`。P01 v0.2 基线的名义时间可用于回放，页面标注时间来源。`--speed 5` 只压缩回放等待时间，状态机仍按数据时间计时。需要核对 NPZ 时使用原有离线校验入口。
+
+## 使用者页面一键启动现场检测
+
+在接雷达的电脑上，将 `radar_device.local.json` 放在 `live_monitor.py` 旁边。配置路径以该文件所在目录为基准，也可用绝对路径。示例文件名需换成现场交付件。
+
+```json
+{
+  "command": ["./设备程序/detect_live.py"],
+  "meta": "./设备程序/现场会话_meta.json",
+  "algorithm": "./设备程序/现场会话_algorithm_online.json"
+}
+```
+
+`command` 第一项为本机可信的 Python 脚本或 EXE，其余元素是独立参数。程序在前台运行，从环境变量读取 `RADAR_A_FRAME_URL`、`RADAR_A_FRAME_TOKEN`、`RADAR_A_META` 和 `RADAR_A_ALGORITHM`。每轮使用新令牌和新会话，从第 0 帧开始。日志可在监测服务的启动窗口查看。
+
+打开使用者页面并点击「开始检测」。A 接收首帧后显示「正在检测」，20 秒未收首帧则停止并提示。点「停止检测」结束本轮。默认入口仍可回放合成录制，页面标明数据来源。显式 `--live` 或 `--replay` 沿用各自的启动方式。
+
+现场程序的交付、时间约定和验收步骤见[真机对接与验收清单](../对接事宜/2026-11-24_A_B_C一键检测真机联调.md)。
 
 ## C 接入约定
 

@@ -29,3 +29,4 @@ Thumbs.db
 *.bin
 *.hex
 *.elf
+radar_device.local.json

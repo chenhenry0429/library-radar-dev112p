@@ -7,8 +7,9 @@ import json
 import os
 from pathlib import Path
 import signal
+import subprocess
 import sys
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 from urllib.parse import urlsplit
 from urllib.request import ProxyHandler, build_opener
 
@@ -46,23 +47,43 @@ def configure(args):
     rid = "DEV112P_T01_reference"
     templates = args.device_config.parent / "dev112p_device"
     prepare_session(describe_session(profile, config, rid), templates, args)
+    if args.onelab_control is not None:
+        read_json(args.onelab_control)
+    command = [sys.executable, "-X", "utf8", "-B", str(Path(__file__).resolve()),
+               "--recordings", str(args.recordings), "--output", str(args.output),
+               "--c-root", str(args.c_root), "--config", str(args.config)]
+    if args.onelab_control is not None:
+        command += ["--onelab-control", str(args.onelab_control)]
     write_json(args.device_config, {
-        "command": [sys.executable, "-X", "utf8", "-B", str(Path(__file__).resolve()),
-                    "--recordings", str(args.recordings), "--output", str(args.output),
-                    "--c-root", str(args.c_root), "--config", str(args.config)],
+        "command": command,
         "meta": f"dev112p_device/{rid}_meta.json",
         "algorithm": f"dev112p_device/{rid}_algorithm_online.json",
         "managed_acquisition": True,
         "allow_nominal_live_time": True,
         "first_frame_timeout_s": args.first_frame_timeout,
+        "graceful_stop_timeout_s": 12 if args.onelab_control is not None else 2.5,
     })
     print(f"A 配置已生成：{args.device_config}", flush=True)
 
 
-def watch_stop(path, stop):
+def control_onelab(path, action):
+    if sys.platform != "win32":
+        raise RuntimeError("ONELAB 一键控制需要 Windows")
+    helper = Path(__file__).with_name("onelab_control.py")
+    try:
+        subprocess.run(
+            [sys.executable, "-X", "utf8", str(helper), action.lower(), str(path)],
+            check=True, timeout=8, creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"ONELAB {action} 失败，请查看启动窗口") from error
+
+
+def watch_stop(path, stop, stop_capture):
     while not stop.wait(0.05):
         if path.is_file():
-            stop.set()
+            stop_capture()
+            return
 
 
 def forward_frames(b_dir, c_dir, args, url, token, stop, stop_file, reference_algo):
@@ -112,13 +133,46 @@ def capture(args):
     reference_meta = read_json(os.environ["RADAR_A_META"])
     reference_algo = read_json(os.environ["RADAR_A_ALGORITHM"])
     stop_file = Path(os.environ["RADAR_A_STOP_FILE"])
-    stop = Event()
-    signal.signal(signal.SIGINT, lambda *_: stop.set())
-    Thread(target=watch_stop, args=(stop_file, stop), daemon=True).start()
+    stop, control_lock = Event(), Lock()
+    managed_recording = False
+    stop_error = None
 
-    args.recordings.mkdir(parents=True, exist_ok=True)
-    previous = set(args.recordings.glob("*/RadarData_1.dat"))
-    print(f"等待 ONELAB 新录制，请在 ONELAB 点「开始」：{args.recordings}", flush=True)
+    def stop_capture():
+        nonlocal managed_recording, stop_error
+        with control_lock:
+            if managed_recording:
+                managed_recording = False
+                try:
+                    control_onelab(args.onelab_control, "Stop")
+                except (OSError, RuntimeError) as error:
+                    stop_error = error
+                    print(f"停止采集失败：{error}", file=sys.stderr, flush=True)
+            stop.set()
+
+    signal.signal(signal.SIGINT, lambda *_: stop_file.touch())
+    Thread(target=watch_stop, args=(stop_file, stop, stop_capture), daemon=True).start()
+
+    try:
+        args.recordings.mkdir(parents=True, exist_ok=True)
+        previous = set(args.recordings.glob("*/RadarData_1.dat"))
+        if args.onelab_control is None:
+            print(f"等待 ONELAB 新录制：{args.recordings}", flush=True)
+        else:
+            with control_lock:
+                if stop.is_set() or stop_file.is_file():
+                    return
+                control_onelab(args.onelab_control, "Start")
+                managed_recording = True
+        capture_recording(args, rid, url, token, reference_meta, reference_algo,
+                          previous, stop, stop_file, stop_capture)
+    finally:
+        stop_capture()
+    if stop_error is not None:
+        raise stop_error
+
+
+def capture_recording(args, rid, url, token, reference_meta, reference_algo,
+                      previous, stop, stop_file, stop_capture):
     source = next_recording(args.recordings, previous, stop)
     if source is None:
         return
@@ -134,7 +188,7 @@ def capture(args):
             accepted = forward_frames(b_dir, c_dir, args, url, token, stop, stop_file,
                                       reference_algo)
         finally:
-            stop.set()
+            stop_capture()
         summary = producer.result()
     write_json(output / "A_delivery.json", {
         "recording_id": rid, "B_frames": summary["frames"], "A_accepted": accepted,
@@ -151,12 +205,16 @@ def main():
     parser.add_argument("--device-config", type=Path, help="create A's local JSON at this path")
     parser.add_argument("--reference-ini", type=Path, help="approved ONELAB configuration")
     parser.add_argument("--first-frame-timeout", type=float, default=60)
+    parser.add_argument("--onelab-control", type=Path,
+                        help="local Windows ONELAB executable, window and recording control selectors")
     args = parser.parse_args()
     if (args.device_config is None) != (args.reference_ini is None):
         parser.error("--device-config and --reference-ini must be supplied together")
     for name in ("recordings", "output", "c_root", "config"):
         setattr(args, name, getattr(args, name).resolve())
     try:
+        if args.onelab_control is not None:
+            args.onelab_control = args.onelab_control.resolve(strict=True)
         if args.device_config is not None:
             configure(args)
         else:

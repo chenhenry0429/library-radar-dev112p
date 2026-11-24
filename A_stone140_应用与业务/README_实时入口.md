@@ -1,4 +1,4 @@
-# A 端实时入口 v0.4.0
+# A 端实时入口 v0.5.0
 
 ## 启动本机演示
 
@@ -26,9 +26,9 @@ python live_monitor.py
 
 `command` 第一项为本机可信的 Python 脚本或 EXE，其余元素是独立参数。程序在前台运行，从环境变量读取 `RADAR_A_FRAME_URL`、`RADAR_A_FRAME_TOKEN`、`RADAR_A_META` 和 `RADAR_A_ALGORITHM`。每轮使用新令牌和新会话，从第 0 帧开始。日志可在监测服务的启动窗口查看。
 
-打开使用者页面并点击「开始检测」。A 接收首帧后显示「正在检测」，20 秒未收首帧则停止并提示。点「停止检测」结束本轮。默认入口仍可回放合成录制，页面标明数据来源。显式 `--live` 或 `--replay` 沿用各自的启动方式。
+打开使用者页面并点击「开始检测」。A 接收首帧后显示「正在检测」，首帧超时则停止并提示。点「停止检测」结束本轮。默认入口仍可回放合成录制，页面标明数据来源。显式 `--live` 或 `--replay` 沿用各自的启动方式。
 
-DEV112P 的本机配置由 [B 的采集入口](../B_chenhenry0429_雷达与采集/README.md#dev112p-实时联调) 生成。启用 `managed_acquisition` 后，A 通过 `RADAR_A_RECORDING_ID` 下发本轮编号，并使用 `RADAR_A_STOP_FILE` 通知桥接程序保存和退出。`RADAR_A_META` 与 `RADAR_A_ALGORITHM` 指向已校验的配置模板，桥接程序会保存本轮实际描述。可用 `first_frame_timeout_s` 为 ONELAB 的手动开录留出时间。
+DEV112P 的本机配置由 [B 的采集入口](../B_chenhenry0429_雷达与采集/README.md#dev112p-实时联调) 生成。启用 `managed_acquisition` 后，A 通过 `RADAR_A_RECORDING_ID` 下发本轮编号，并使用 `RADAR_A_STOP_FILE` 通知桥接程序保存和退出。`RADAR_A_META` 与 `RADAR_A_ALGORITHM` 指向已校验的配置模板，桥接程序会保存本轮实际描述。在 Windows 采集电脑提供 `--onelab-control` 配置后，A 页面自动调用 ONELAB 录制与停止。用 `first_frame_timeout_s` 设置等待首帧的时间。
 
 DEV112P 配置通过 `allow_nominal_live_time` 显式选择设备帧计数推算的名义时间。A 开发者页会标注「名义时间」，按声明的帧周期校验每帧时间。B 同时在帧日志保留文件读取观测时间，供排查缓冲和断流。
 

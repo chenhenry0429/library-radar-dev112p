@@ -18,6 +18,7 @@ class RadarLauncher:
         self.lock = Lock()
         self.process = self.deadline = self.token = None
         self.stop_file = None
+        self.stop_timeout = 2.5
         self.status = "ready" if self.config_path.is_file() else "unconfigured"
 
     def _check_process(self):
@@ -54,7 +55,7 @@ class RadarLauncher:
         try:
             if stop_file is not None:
                 with suppress(TimeoutExpired):
-                    process.wait(timeout=2.5)
+                    process.wait(timeout=self.stop_timeout)
             if process.poll() is None:
                 process.terminate()
                 try:
@@ -70,7 +71,7 @@ class RadarLauncher:
             else:
                 self.process = None
                 self._remove_stop_file()
-                self.status = status
+                self.status = "exited" if process.returncode and stop_file is not None and status == "stopped" else status
             return self.status
 
     def _expire(self, process):
@@ -100,6 +101,9 @@ class RadarLauncher:
                 timeout_s = float(settings.get("first_frame_timeout_s", 20))
                 if not math.isfinite(timeout_s) or timeout_s <= 0:
                     raise ValueError("first_frame_timeout_s 须为有限正数")
+                stop_timeout = float(settings.get("graceful_stop_timeout_s", 2.5))
+                if not math.isfinite(stop_timeout) or not 0 < stop_timeout <= 15:
+                    raise ValueError("graceful_stop_timeout_s 须在 0 至 15 秒内")
                 token = token_urlsafe(32)
                 env = {
                     **os.environ,
@@ -121,6 +125,7 @@ class RadarLauncher:
             self.monitor.stop.set()
             self.monitor, self.process, self.token = monitor, process, token
             self.stop_file = stop_file
+            self.stop_timeout = stop_timeout
             self.status = "starting"
             self.deadline = Timer(timeout_s, self._expire, args=(process,))
             self.deadline.daemon = True

@@ -1,4 +1,4 @@
-"""A 端实时入口 v0.4.0。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.5.0。运行 python live_monitor.py --help。"""
 import argparse
 import csv
 from hmac import compare_digest

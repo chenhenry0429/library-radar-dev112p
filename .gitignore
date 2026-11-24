@@ -30,3 +30,6 @@ Thumbs.db
 *.hex
 *.elf
 radar_device.local.json
+onelab_control.local.json
+/A_stone140_应用与业务/dev112p_device/
+.radar-stop-DEV112P_*

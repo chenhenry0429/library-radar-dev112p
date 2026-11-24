@@ -40,12 +40,15 @@ class DevFrameError(ValueError):
     """B 侧单帧数据不可投影（如零有效 chirp、形状不符）。"""
 
 
-def project_dev112p_frame(raw_frame, valid_chirps, chip=1, rx=0):
-    """dev112p 单帧立方 → 规范 1dfft 单帧距离剖面 [nb] complex64。
+def project_dev112p_frame(raw_frame, valid_chirps, chip=1, rx=0, parity=False):
+    """dev112p 单帧立方 → 规范 1dfft 单帧距离剖面。
 
-    与 tools/dev112p_adapter.py 的 chirp_mean 逐字节一致（valid chirp 复均值）：
+    parity=False（v1.2 旧口径）：valid chirp 复均值 → [nb] complex64，
+    与 tools/dev112p_adapter.py 的 chirp_mean 逐字节一致：
       x = raw[chip, rx, :, :, 0] + 1j·raw[..., 1]        (float32 → complex64)
       prof = Σ_chirp x·v / Σ_chirp v                     (int64 分母 → complex128 → complex64)
+    parity=True（v1.2.1）：奇/偶 chirp 各自复均值 → [2, nb]，
+    与适配器 chirp_split 同口径（parity 0 = chirp 序号 0,2,4…）。
     """
     rd = np.asarray(raw_frame)
     vc = np.asarray(valid_chirps)
@@ -63,6 +66,17 @@ def project_dev112p_frame(raw_frame, valid_chirps, chip=1, rx=0):
     nvalid = int(v.sum())
     if nvalid == 0:
         raise DevFrameError(f"no valid chirp on chip{chip}/rx{rx}")
+    if parity:
+        out = np.zeros((2, x.shape[1]), dtype=np.complex64)
+        idx = np.arange(x.shape[0]) % 2
+        for p in (0, 1):
+            mask = (idx == p) & v
+            cnt = int(mask.sum())
+            if cnt == 0:
+                continue
+            w = mask.astype(np.float32)[:, None]
+            out[p] = ((x * w).sum(axis=0) / np.asarray(cnt, dtype=np.int64)).astype(np.complex64)
+        return out
     w = v.astype(np.float32)[:, None]                         # (K, 1)
     acc = (x * w).sum(axis=0)                                 # (nb,)
     prof = (acc / np.asarray(nvalid, dtype=np.int64)).astype(np.complex64)
@@ -119,6 +133,9 @@ class SeatDetector:
                                  dt_med=float(frame_period_s))
         self._dev_chip = int(dev112p_chip)
         self._dev_rx = int(dev112p_rx)
+        # v1.2.1：奇偶 chirp 分链（meta 3 维 raw_shape 或 config 显式启用）
+        self._parity = (len(shape) >= 3) or bool(
+            ((m1_config or {}).get("chirp_parity") or {}).get("enabled"))
         self._next_frame_id = 0
         self._last_ts = None
 
@@ -160,14 +177,21 @@ class SeatDetector:
     # ------------------------------------------------------------------ #
 
     def feed_frame(self, Xt, ts_t, frame_id=None):
-        """喂入一帧已投影的规范距离剖面（[nb] complex/real）。
+        """喂入一帧已投影的规范距离剖面（[nb] 或 v1.2.1 的 [parity, nb]）。
 
         返回九字段行 dict；不修改历史帧（严格因果）。
         """
         frame_id = self._check_frame_id(frame_id)
         ts_t = self._check_ts(ts_t)
         st = self._st
-        _m1_step(st, Xt, ts_t)
+        prof = np.asarray(Xt)
+        if prof.ndim == 2 and prof.shape[0] != getattr(st, "n_parity", 1):
+            raise ValueError(
+                f"frame parity axis {prof.shape[0]} != session n_parity "
+                f"{getattr(st, 'n_parity', 1)}")
+        if prof.shape[-1] != st.nb:
+            raise ValueError(f"profile has {prof.shape[-1]} bins, session expects {st.nb}")
+        _m1_step(st, prof, ts_t)
         self._next_frame_id = frame_id + 1
         self._last_ts = ts_t
         t = len(st.ts_hist) - 1
@@ -183,7 +207,8 @@ class SeatDetector:
         ts_t = self._check_ts(ts_t)
         try:
             prof = project_dev112p_frame(raw_frame, valid_chirps,
-                                         chip=self._dev_chip, rx=self._dev_rx)
+                                         chip=self._dev_chip, rx=self._dev_rx,
+                                         parity=self._parity)
             if prof.shape[-1] != self._st.nb:
                 raise DevFrameError(
                     f"projected profile has {prof.shape[-1]} bins, "
@@ -253,13 +278,17 @@ class SeatDetector:
     def session_summary(self):
         """会话算法说明（live_seat.py 写 <rid>_session.json，诊断用）。"""
         st = self._st
+        v121 = getattr(st, "algorithm_version", "")
         return {
-            "algorithm_version": "M1 v1.2 + online v0.1 (placeholder posture)",
-            "model_version": "M1-v1.2+online-v0.1",
+            "algorithm_version": (f"{v121} + online v0.1 (placeholder posture)"
+                                  if v121 else
+                                  "M1 v1.2 + online v0.1 (placeholder posture)"),
+            "model_version": ("M1-v1.2.1+online-v0.1" if v121 else "M1-v1.2+online-v0.1"),
             "capabilities": self.capabilities(),
             "capabilities_semantics": self.capabilities_semantics(),
             "region": {k: st.region[k] for k in ("lo", "hi", "main_bin", "source")},
             "degraded_input": st.degraded,
             "bg_mode": st.bg_mode,
+            "chirp_parity": self._parity,
             "notes": list(st.warnings),
         }

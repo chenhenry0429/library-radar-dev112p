@@ -121,7 +121,7 @@ byId("detect").addEventListener("click", async () => {
   renderDetection(lastReading);
   try {
     const response = await fetch("/api/detection/" + action, {
-      method: "POST", headers: {"X-Radar-Control": "1"}, signal: AbortSignal.timeout(5000),
+      method: "POST", headers: {"X-Radar-Control": "1"}, signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) throw new Error("Detection control unavailable");
     const {detector} = await response.json();

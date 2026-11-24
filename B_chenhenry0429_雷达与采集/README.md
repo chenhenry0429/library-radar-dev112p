@@ -37,7 +37,8 @@ python -X utf8 .\A_stone140_应用与业务\live_monitor.py --port 8766
 打开 ONELAB 采集窗口后可用以下命令列出按钮。请先确保录制开始按钮在已连接设备、选好 1DFFT 与保存目录时可用。按钮匹配不到、不可用或无法调用时，应用记录错误并结束本轮。若 ONELAB 版本不能保留连接配置，启动应用后需要先完成设备连接；这一步须在实机确认。
 
 ```powershell
-powershell -NoProfile -File .\B_chenhenry0429_雷达与采集\dev112p_live\onelab_control.ps1 -Action Inspect -Config "<本机 onelab_control.local.json>"
+python -m pip install pywinauto==0.6.9
+python -X utf8 .\B_chenhenry0429_雷达与采集\dev112p_live\onelab_control.py inspect "<本机 onelab_control.local.json>"
 ```
 
 省略 `--onelab-control` 时，桥接器保留已有手动联调模式。A 启动桥接后需在 ONELAB 手工开录。

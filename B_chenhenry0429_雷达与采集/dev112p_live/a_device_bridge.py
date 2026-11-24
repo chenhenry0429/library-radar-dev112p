@@ -69,12 +69,10 @@ def configure(args):
 def control_onelab(path, action):
     if sys.platform != "win32":
         raise RuntimeError("ONELAB 一键控制需要 Windows")
-    powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
-    helper = Path(__file__).with_name("onelab_control.ps1")
+    helper = Path(__file__).with_name("onelab_control.py")
     try:
         subprocess.run(
-            [str(powershell), "-NoProfile", "-NonInteractive", "-File", str(helper),
-             "-Action", action, "-Config", str(path)],
+            [sys.executable, "-X", "utf8", str(helper), action.lower(), str(path)],
             check=True, timeout=8, creationflags=subprocess.CREATE_NO_WINDOW,
         )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:

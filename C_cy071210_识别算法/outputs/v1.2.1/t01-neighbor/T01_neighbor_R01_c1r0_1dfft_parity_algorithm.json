@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "recording_id": "T01_neighbor_R01_c1r0_1dfft_parity",
   "algorithm_version": "M1 v1.2.1",
-  "parameter_version": "f67df874",
+  "parameter_version": "4c6cecc1",
   "capabilities": {
     "presence": true,
     "posture": false,
@@ -63,7 +63,11 @@
       "quality": {
         "low_signal_db": -60.0
       },
-      "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown"
+      "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown",
+      "confidence": {
+        "floor": 0.6,
+        "span": 0.39
+      }
     },
     "config_source": "config/M1_dev112p_v1.2.1.json",
     "region_params": {

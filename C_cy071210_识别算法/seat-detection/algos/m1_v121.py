@@ -84,6 +84,7 @@ class M1V121State:
         "entry_ratio", "entry_confirm", "release_ratio", "release_frames",
         "win_slow", "win_fast", "motion_bin", "floor_alpha", "floor_min_ratio",
         "fast_rel_m_max", "fast_rel_inst_max", "fast_rel_f1_max",
+        "conf_floor", "conf_span",
         "calib_s", "calib_min_frames", "warmup_guard", "floor_pct",
         "f1_db_floor", "f1_db_span", "f1_gate", "f1_entry_support", "f1_ref_alpha",
         "f1_entry_enabled", "f1_change_max_db",
@@ -127,6 +128,10 @@ class M1V121State:
         self.fast_rel_m_max = float(_get(cfg, ["micro_motion", "fast_release_m_max"], 6.0))
         self.fast_rel_inst_max = float(_get(cfg, ["micro_motion", "fast_release_inst_max"], 3.5))
         self.fast_rel_f1_max = float(_get(cfg, ["micro_motion", "fast_release_f1_max"], 0.2))
+        # presence_confidence = 判决置信度（给 A 的 0.60 门槛用）：按“离相反
+        # 判决的余量”映射到 [floor, floor+span]，标定/整窗等待期仍是 0.5（无效）。
+        self.conf_floor = float(_get(cfg, ["confidence", "floor"], 0.60))
+        self.conf_span = float(_get(cfg, ["confidence", "span"], 0.39))
         self.calib_s = float(_get(cfg, ["calibration", "empty_accumulate_s"], 10.0))
         self.calib_min_frames = max(1, int(_get(cfg, ["calibration", "min_valid_frames"], 40)))
         self.warmup_guard = float(_get(cfg, ["calibration", "warmup_guard_s"], 6.0))
@@ -475,12 +480,18 @@ class M1V121State:
             self.cand = 0
         self.presence[t] = self.state
 
-        # 兼容旧口径的 0–1 证据分数（A 端 conf 显示；非阈值依据）
+        # 0–1 证据分数（诊断用）；presence_confidence 表示“对当前判决的置信度”，
+        # 不能再用 |2score−1| 的信息量口径：那会在判空后、m 处于中间带时把
+        # conf 压到 0.5x（现场第二轮：第 848 帧判空但 conf=0.525 < A 的 0.60 门槛，
+        # A 不采信这条空座证据，3 s 连续判空被打断）。现在按“离相反判决的余量”
+        # 给置信度：判空时 m 越低越可信，判人时 m 越高越可信。
         span = max(self.entry_ratio - self.release_ratio, 1e-6)
         self.score[t] = float(np.clip((m - self.release_ratio) / span, 0.0, 1.0))
-        c = float(np.clip(0.5 + 0.49 * abs(2.0 * self.score[t] - 1.0), 0.5, 0.99))
+        margin = self.score[t] if self.state == 1 else (1.0 - self.score[t])
+        c = float(np.clip(self.conf_floor + self.conf_span * margin,
+                          self.conf_floor, 0.99))
         if self.calibrating[t]:
-            c = min(c, 0.8)
+            c = 0.5
         self.conf[t] = c
 
     def _resnapshot(self, ts_t):

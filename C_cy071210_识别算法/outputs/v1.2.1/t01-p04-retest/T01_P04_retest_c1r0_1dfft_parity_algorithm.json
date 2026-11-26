@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "recording_id": "T01_P04_retest_c1r0_1dfft_parity",
   "algorithm_version": "M1 v1.2.1",
-  "parameter_version": "a877c6fe",
+  "parameter_version": "f67df874",
   "capabilities": {
     "presence": true,
     "posture": false,
@@ -16,7 +16,7 @@
       "feature_set": "v1.2.1",
       "algorithm_version": "M1 v1.2.1",
       "model_version": "M1-v1.2.1",
-      "description": "M1 v1.2.1 for DEV112P 1dfft parity recordings: (R1) odd/even chirp chains kept separate, each with its own backing; (R2) opening empty-seat calibration for 10 s of valid frames before occupancy judgement is enabled (no 1-frame background lock, no opening false alarm); (R3) F1 background residual normalised by the leakage bin (bin/|bin0|) so the 2.9x site-to-site amplitude spread and the -1.9..-6.2 %/min thermal drift no longer masquerade as occupancy, and the empty-seat decision is driven by the Bin1 micro-motion evidence (detrended frame-to-frame amplitude change, normalised by the opening-empty motion floor). Still-sitting is kept by the 5 s release confirmation; a walk-away releases as soon as the Bin1 micro-motion returns to the empty band for release_frames and the leakage-normalised F1 residual is back within gate, then the empty snapshot is rebuilt from the last 10 s. Config frozen for the C v1.2.1 fix task; v1.2 results (config/M1_dev112p_v0.2.json) are unchanged.",
+      "description": "M1 v1.2.1 for DEV112P 1dfft parity recordings: (R1) odd/even chirp chains kept separate, each with its own backing; (R2) opening empty-seat calibration for 10 s of valid frames before occupancy judgement is enabled (no 1-frame background lock, no opening false alarm); (R3) F1 background residual normalised by the leakage bin (bin/|bin0|) so the 2.9x site-to-site amplitude spread and the -1.9..-6.2 %/min thermal drift no longer masquerade as occupancy, and the empty-seat decision is driven by the Bin1 micro-motion evidence (detrended frame-to-frame amplitude change, normalised by the opening-empty motion floor). Still-sitting is kept by the 5 s release confirmation; a walk-away releases as soon as the Bin1 micro-motion returns to the empty band for release_frames and the leakage-normalised F1 residual is back within gate, then the empty snapshot is rebuilt from the last 10 s. Fast release path: a slow step/drift that lifts the 10 s motion while Bin1 instantaneous change and F1 stay at the empty level is not treated as occupancy (fast_release_*), so the release is not pushed back by slow steps (849-frame field: 22.2 s -> 12.1 s). Config frozen for the C v1.2.1 fix task; v1.2 results (config/M1_dev112p_v0.2.json) are unchanged.",
       "chirp_parity": {
         "enabled": true,
         "note": "tx_polling=1: odd/even chirps differ ~11x in amplitude (T01 odd ~16200 / even ~1450 counts); averaging them gave the frame-0 +139 counts seed bias."
@@ -35,7 +35,11 @@
         "entry_confirm_frames": 8,
         "release_ratio": 1.45,
         "release_frames": 26,
-        "floor_alpha": 0.02
+        "floor_alpha": 0.02,
+        "floor_min_ratio": 0.8,
+        "fast_release_m_max": 6.0,
+        "fast_release_inst_max": 3.5,
+        "fast_release_f1_max": 0.2
       },
       "f1": {
         "normalization": "leakage_ratio",
@@ -120,6 +124,6 @@
   "notes": [
     "v1.2.1 calibration: 53 valid frames over 10.1s; empty motion floor=0.00092 (P20); F1 ref=-58.3 dB",
     "v1.2.1 release at t=67.5s: empty snapshot rebuilt (1), floor=0.00122",
-    "v1.2.1 release at t=96.4s: empty snapshot rebuilt (2), floor=0.00118"
+    "v1.2.1 release at t=87.8s: empty snapshot rebuilt (2), floor=0.00369"
   ]
 }

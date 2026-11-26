@@ -1,0 +1,174 @@
+{
+  "mode": "live",
+  "source_kind": "measured",
+  "phase": "waiting",
+  "available": false,
+  "seat_id": "T01",
+  "recording_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e",
+  "algorithm_version": "M1 v1.2.1 + online v0.1",
+  "capabilities": [
+    "presence"
+  ],
+  "nominal_time": true,
+  "state": null,
+  "silence_review": false,
+  "last_frame_age_s": 2.5159999999887077,
+  "parameter_version": "b39400d2+online-v0.1",
+  "config": {
+    "presence_confirm_s": 2.0,
+    "absence_confirm_s": 3.0,
+    "release_wait_s": 60.0,
+    "posture_confirm_s": 2.0,
+    "remind_after_s": 10.0,
+    "reference_reset_s": 3.0,
+    "unknown_clear_s": 3.0,
+    "cooldown_s": 60.0,
+    "review_after_s": 30.0,
+    "data_gap_s": 2.0,
+    "presence_confidence_min": 0.6,
+    "posture_confidence_min": 0.6
+  },
+  "known_issues": [],
+  "evidence": null,
+  "events": [
+    {
+      "timestamp": 23.22,
+      "frame_id": 120,
+      "seat_id": "T01",
+      "session_id": "",
+      "event_type": "occupancy_change",
+      "from_state": "unknown",
+      "to_state": "idle",
+      "reason": "continuous valid absence confirmed"
+    },
+    {
+      "timestamp": 23.22,
+      "frame_id": 120,
+      "session_id": "",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 23.8005,
+      "frame_id": 123,
+      "session_id": "",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "calibration_required",
+      "from_state": "",
+      "to_state": "uncalibrated",
+      "reason": "new confirmed seat session; reference must be acquired after this timestamp"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "occupancy_change",
+      "from_state": "idle",
+      "to_state": "in_use",
+      "reason": "continuous valid presence confirmed"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "posture_change",
+      "from_state": "not_applicable",
+      "to_state": "unknown",
+      "reason": "posture/occupancy evidence unavailable or current personal reference invalid"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 102.7485,
+      "frame_id": 531,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 105.07050000000001,
+      "frame_id": 543,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 115.51950000000001,
+      "frame_id": 597,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 118.035,
+      "frame_id": 610,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 123.84,
+      "frame_id": 640,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 126.162,
+      "frame_id": 652,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 137.9655,
+      "frame_id": 713,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 145.7055,
+      "frame_id": 753,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 161.379,
+      "frame_id": 834,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_pending",
+      "reason": "占用证据待确认，暂不计入可用座位。"
+    },
+    {
+      "timestamp": 167.958,
+      "frame_id": 868,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "confirmation_complete",
+      "reason": "占用证据已重新确认。"
+    },
+    {
+      "timestamp": 175.311,
+      "frame_id": 906,
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "feed_interrupted",
+      "reason": "超过缺口阈值未收到新帧。已冻结计时，并从可用座位中排除。"
+    }
+  ],
+  "detector": "stopped"
+}

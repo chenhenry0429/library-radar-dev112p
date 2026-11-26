@@ -3,7 +3,7 @@
   "archive_version": 1,
   "new_replay_code_commit": "d58edc8",
   "new_replay_algorithm_source": "9c34389",
-  "recording_count": 24,
+  "recording_count": 25,
   "recordings": [
     {
       "recording_id": "T01_P01_R01",
@@ -268,6 +268,19 @@
       "uniform_replay": "live/T01_20261124_113708/replay/T01_20261124_113708_result.csv",
       "A_live_frame_count": 840,
       "c_m1_parity": "live/T01_20261124_113708/c_input/T01_20261124_113708_parity_raw.npz"
+    },
+    {
+      "recording_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e",
+      "path": "live/T01_20261126_202237",
+      "frame_groups": 920,
+      "actual_action_mark_count": 2,
+      "source_dat_sha256": "92b60e95a276a6297e9f2793b32ceac7f248bcd1907bc8a53cd2918e38a544fa",
+      "description": "T01 第二轮复测，入座前误占用，实际走远后未触发倒计时",
+      "group": "live",
+      "scenario": "early_occupancy_and_no_leave_countdown",
+      "uniform_replay": "live/T01_20261126_202237/replay/DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e_result.csv",
+      "A_live_frame_count": 907,
+      "c_m1_parity": "live/T01_20261126_202237/c_input/T01_20261126_202237_parity_raw.npz"
     }
   ]
 }

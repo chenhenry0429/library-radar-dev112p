@@ -1,0 +1,48 @@
+{
+  "recording_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e",
+  "test_date_local": "2026-11-26",
+  "site_seat": "T01",
+  "scenario": "真实回座复测",
+  "planned_radar_to_seated_chest_cm": 20,
+  "candidate_commit": "413c58c",
+  "baseline_commit": "9c34389",
+  "reference_clock": "现场秒表",
+  "stopwatch_to_radar_offset_s": null,
+  "observations": [
+    {
+      "stopwatch_s": 37,
+      "event": "观察到页面显示有人使用，受试者尚未坐下",
+      "note": "这是发现该状态的时刻，页面首次切换时间未记录。"
+    },
+    {
+      "stopwatch_s": 51.11,
+      "event": "坐稳"
+    },
+    {
+      "stopwatch_s": 95.54,
+      "event": "实际走远"
+    },
+    {
+      "stopwatch_s": 180.77,
+      "event": "停止检测"
+    }
+  ],
+  "absence_countdown_observed": false,
+  "walk_away_to_stop_s": 85.23,
+  "countdown_cancelled_after_actual_return": null,
+  "return_after_departure_reported": null,
+  "person_nearby_or_chair_movement_after_departure_reported": null,
+  "radar_evidence": {
+    "A_accepted_frames": 907,
+    "B_archived_frames": 920,
+    "first_C_absence_after_initial_occupied_radar_s": 161.379,
+    "C_presence_restored_radar_s": 165.8295,
+    "A_absence_confirmation_s": 3,
+    "A_presence_confidence_min": 0.6,
+    "interruption_frame": 848,
+    "interruption_radar_s": 164.088,
+    "interruption_confidence": 0.5252279590855788,
+    "same_A_transitions_both_versions": true
+  },
+  "conclusion": "现场在入座前观察到占用误报。实际走远到停止期间未触发离座倒计时，真实回座取消倒计时未能验证。"
+}

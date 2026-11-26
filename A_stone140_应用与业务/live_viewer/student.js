@@ -92,12 +92,13 @@ let requestVersion = 0;
 function renderDetection(snapshot) {
   const status = snapshot?.detector;
   const button = byId("detect");
-  const active = ["starting", "running", "stop_failed"].includes(status);
+  const active = ["starting", "running", "stopping", "stop_failed"].includes(status);
   const messages = {
     unconfigured: "尚未配置本机雷达采集程序。",
     ready: "雷达待启动。请确认设备已连接本机。",
     starting: "正在启动雷达并等待第一帧。",
     running: snapshot?.phase === "interrupted" ? "雷达数据暂时中断。" : "正在检测。",
+    stopping: "正在停止检测和保存采集数据。",
     stopped: "检测已停止。",
     stop_failed: "检测程序尚未退出。请再次停止或检查启动窗口。",
     exited: "检测程序已退出，可重新启动。",
@@ -108,7 +109,7 @@ function renderDetection(snapshot) {
     offline: "本机监测服务未连接。",
   };
   button.dataset.action = active ? "stop" : "start";
-  button.disabled = controlBusy || !status || ["offline", "external", "replay"].includes(status);
+  button.disabled = controlBusy || !status || ["stopping", "offline", "external", "replay"].includes(status);
   text("detect-label", active ? "停止检测" : "开始检测");
   text("detect-status", messages[status] ?? "正在连接本机监测服务。");
 }
@@ -120,7 +121,7 @@ byId("detect").addEventListener("click", async () => {
   renderDetection(lastReading);
   try {
     const response = await fetch("/api/detection/" + action, {
-      method: "POST", headers: {"X-Radar-Control": "1"}, signal: AbortSignal.timeout(5000),
+      method: "POST", headers: {"X-Radar-Control": "1"}, signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) throw new Error("Detection control unavailable");
     const {detector} = await response.json();

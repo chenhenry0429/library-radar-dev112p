@@ -1,4 +1,4 @@
-"""A 端实时入口 v0.4.0。运行 python live_monitor.py --help。"""
+"""A 端实时入口 v0.5.0。运行 python live_monitor.py --help。"""
 import argparse
 import csv
 from hmac import compare_digest
@@ -11,6 +11,7 @@ from secrets import token_urlsafe
 import sys
 from threading import Event, Lock, Thread
 from time import monotonic
+from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
@@ -61,6 +62,10 @@ class LiveMonitor:
             fields = {key: "" if value is None else str(value) for key, value in payload.items()}
             row = parse_result_row(fields, self.algorithm, "live input", expected + 2)
             validate_position(row, expected, previous)
+            if self.nominal_period is not None and not math.isclose(
+                row["timestamp"], expected * self.nominal_period, rel_tol=0., abs_tol=1e-8
+            ):
+                raise ValueError("名义时间须与声明的帧周期和帧号一致")
             now = monotonic()
             self.feedback.observe_silence(previous, self.received_at, now, self.phase)
             interrupted = self.replay_rows is None and self.feedback.interrupted
@@ -216,7 +221,7 @@ def load_recorded_rows(path, algorithm, nominal_period):
     return rows
 
 
-def load_metadata(meta_path, algorithm_path, *, replay):
+def load_metadata(meta_path, algorithm_path, *, replay, allow_nominal_live=False):
     meta = read_json(meta_path)
     algorithm = read_json(algorithm_path)
     recording_id(meta["recording_id"])
@@ -239,6 +244,12 @@ def load_metadata(meta_path, algorithm_path, *, replay):
             algorithm["calibrations"] = [
                 {**cal, "invalidation_reason": cal.get("invalid_reason")} for cal in algorithm["calibrations"]
             ]
+    elif nominal and allow_nominal_live and (
+        meta["timestamp_unit"], meta["timestamp_origin"], meta.get("timestamp_source")
+    ) == ("seconds", "recording_start", "nominal_device_counter"):
+        period = float(time_base["frame_period_s"])
+        if not math.isfinite(period) or period <= 0:
+            raise ValueError("名义帧周期须为正数")
     elif nominal or (meta["timestamp_unit"], meta["timestamp_origin"]) != ("seconds", "recording_start"):
         raise ValueError("在线接入和标准回放要求 seconds / recording_start，名义时间仅用于回放")
     return meta, validate_algorithm(algorithm, meta, algorithm_path), period
@@ -246,12 +257,16 @@ def load_metadata(meta_path, algorithm_path, *, replay):
 
 def load_device_session(path, config):
     settings = read_json(path)
-    meta, algorithm, _ = load_metadata(
-        path.parent / settings["meta"], path.parent / settings["algorithm"], replay=False
+    meta, algorithm, period = load_metadata(
+        path.parent / settings["meta"], path.parent / settings["algorithm"], replay=False,
+        allow_nominal_live=settings.get("allow_nominal_live_time") is True,
     )
     if meta["source_kind"] != "measured":
         raise ValueError("现场检测须使用实测会话描述")
-    return settings, LiveMonitor(meta, algorithm, config)
+    if settings.get("managed_acquisition") is True:
+        rid = f"DEV112P_{uuid4().hex}"
+        meta["recording_id"] = algorithm["recording_id"] = rid
+    return settings, LiveMonitor(meta, algorithm, config, nominal_period=period)
 
 
 def main():

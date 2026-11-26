@@ -162,3 +162,5 @@ python -X utf8 tools/live_seat.py --replay <npz> --config config/M1_dev112p_v0.2
 - A↔C capabilities 语义与在线异常处理（2026-11-19 收口，待 A 复核）：镜像 `对接事宜/2026-11-19_A-C_capabilities语义与在线异常处理.md`
 - A 实时入口契约：归档 `A_stone140_应用与业务/README_实时入口.md`
 - 接口规范 v1：归档 `C_cy071210_识别算法/`（posture/calibration_status 词表以 `algos/selfcheck.py` 为权威实现）
+
+现场原始数据和配套的真实样例、复验输出保存在原 [C PR #9](https://github.com/chenhenry0429/library-radar-dev112p/pull/9)；在 `main` 运行真实目录示例前，先准备组内样本。合成自测不依赖这些文件。

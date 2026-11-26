@@ -20,6 +20,10 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+from urllib.request import ProxyHandler, build_opener
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -204,23 +208,60 @@ def check_emit_algorithm(tmp):
     print("[PASS] algorithm_online.json generated (rid + capabilities)")
 
 
-def main():
-    # 注意：DSH 沙箱只允许写工作区与平台临时区，这里用仓库内的临时目录
-    tmp = os.path.join(ROOT, "_selftest_tmp")
-    if os.path.isdir(tmp):
-        import shutil
-        shutil.rmtree(tmp, ignore_errors=True)
-    os.makedirs(tmp, exist_ok=True)
-    write_meta(os.path.join(tmp, "meta.json"))
-    check_emit_algorithm(tmp)
-    stub = StubA()
-    stub.start()
+def check_a_service(tmp):
+    a_root = Path(HERE).parents[2] / "A_stone140_应用与业务"
+    sys.path.insert(0, str(a_root))
     try:
-        check_basic(tmp, stub)
-        check_zero_mask(tmp, stub)
-        check_bad_recording_id(tmp, stub)
+        from live_monitor import LiveMonitor, handler_for, load_metadata, read_json, validate_config
     finally:
-        stub.stop()
+        sys.path.pop(0)
+
+    meta_path, algo_path = Path(tmp) / "meta.json", Path(tmp) / "algo.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta.update(timestamp_unit="seconds", timestamp_origin="recording_start")
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    meta, algorithm, _ = load_metadata(meta_path, algo_path, replay=False)
+    config = validate_config(read_json(a_root / "offline_config.json"))
+    monitor = LiveMonitor(meta, algorithm, config)
+    with ThreadingHTTPServer(("127.0.0.1", 0), handler_for(monitor, TOKEN)) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        origin = f"http://127.0.0.1:{server.server_port}"
+        try:
+            endpoint = SimpleNamespace(url=origin + "/api/frame")
+            result, out, _ = run_field(tmp, endpoint, algorithm=str(algo_path),
+                                       source_extra=("--zero-mask-at", "100"))
+            assert result.returncode == 0, result.stdout[-2000:] + result.stderr[-2000:]
+            opener = build_opener(ProxyHandler({}))
+            with opener.open(origin + "/api/state", timeout=5) as response:
+                snapshot = json.load(response)
+            rows = read_result(os.path.join(out, f"{RID}_result.csv"))
+            assert len(rows) == FRAMES and snapshot["state"]["frame_id"] == FRAMES - 1
+            assert rows[100]["quality"] == "invalid_frame"
+            assert snapshot["mode"] == "live" and snapshot["source_kind"] == "synthetic"
+            assert snapshot["capabilities"] == ["presence"]
+            assert any(event["event_type"] == "occupancy_change" and event["to_state"] == "in_use"
+                       for event in snapshot["events"]), snapshot["events"]
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
+    print("[PASS] real A HTTP service accepted 430 frames, validated the zero-mask row and displayed occupancy")
+
+
+def main():
+    with TemporaryDirectory(prefix="field-test-") as tmp:
+        write_meta(os.path.join(tmp, "meta.json"))
+        check_emit_algorithm(tmp)
+        stub = StubA()
+        stub.start()
+        try:
+            check_basic(tmp, stub)
+            check_zero_mask(tmp, stub)
+            check_bad_recording_id(tmp, stub)
+        finally:
+            stub.stop()
+            stub.httpd.server_close()
+        check_a_service(tmp)
     print("selftest_field: all checks passed")
 
 

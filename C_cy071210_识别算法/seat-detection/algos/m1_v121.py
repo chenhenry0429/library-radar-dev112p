@@ -125,7 +125,7 @@ class M1V121State:
         # 允许按瞬时变化 + 背景未变判空（849 帧现场：走远后 73–82 s 的慢台阶
         # 把 m 抬到 5，但瞬时变化只有空座水平，导致释放被推迟约 13 s）。
         self.fast_rel_m_max = float(_get(cfg, ["micro_motion", "fast_release_m_max"], 6.0))
-        self.fast_rel_inst_max = float(_get(cfg, ["micro_motion", "fast_release_inst_max"], 1.0))
+        self.fast_rel_inst_max = float(_get(cfg, ["micro_motion", "fast_release_inst_max"], 3.5))
         self.fast_rel_f1_max = float(_get(cfg, ["micro_motion", "fast_release_f1_max"], 0.2))
         self.calib_s = float(_get(cfg, ["calibration", "empty_accumulate_s"], 10.0))
         self.calib_min_frames = max(1, int(_get(cfg, ["calibration", "min_valid_frames"], 40)))

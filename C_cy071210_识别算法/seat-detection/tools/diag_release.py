@@ -60,16 +60,18 @@ def main():
             flag = ""
             if changed:
                 flag = "  <== %s" % ("RE-ENTRY" if pres[i] == 1 else "release")
-            print("%7.2f  %.6f %6.2f %6.2f %5.2f  %2d%s"
-                  % (ts[i], floors[i], m[i], m4[i], f1n[i], pres[i], flag))
+            floor_s = ("%9.6f" % floors[i]) if floors[i] is not None else "        -"
+            print("%7.2f  %s %6.2f %6.2f %5.2f  %2d%s"
+                  % (ts[i], floor_s, m[i], m4[i], f1n[i], pres[i], flag))
 
     # 事件摘要
     print("\n# transitions")
     for i in range(1, len(pres)):
         if pres[i] != pres[i - 1]:
             kind = "re-entry" if pres[i] == 1 else "release"
-            print("  %8.2f s  %s  floor=%.6f m=%.2f m4=%.2f f1n=%.2f"
-                  % (ts[i], kind, floors[i], m[i], m4[i], f1n[i]))
+            floor_s = ("%.6f" % floors[i]) if floors[i] is not None else "-"
+            print("  %8.2f s  %s  floor=%s m=%.2f m4=%.2f f1n=%.2f"
+                  % (ts[i], kind, floor_s, m[i], m4[i], f1n[i]))
     # 判空后 30 s 的 floor/m 统计（看基线是否漂低、m 是否回升）
     for i in range(1, len(pres)):
         if pres[i] == 0 and pres[i - 1] == 1:

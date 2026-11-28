@@ -1,0 +1,75 @@
+{
+  "actual_A": {
+    "states": [
+      "in_use",
+      "leave_wait",
+      "in_use"
+    ],
+    "transition_s": [
+      23.607,
+      107.199,
+      113.1975
+    ],
+    "final_available": false
+  },
+  "controlled_A_continuous_absence_from_frame_538": {
+    "states": [
+      "in_use",
+      "leave_wait",
+      "released"
+    ],
+    "transition_s": [
+      23.607,
+      107.199,
+      167.3775
+    ],
+    "final_available": true
+  },
+  "motion_by_radar_time_s": {
+    "101-104.103": {
+      "frames": 16,
+      "above_entry_ratio": 0,
+      "m_min": 0.8606,
+      "m_max": 1.1162,
+      "quiet_frames": 16
+    },
+    "104.103-111.069": {
+      "frames": 36,
+      "above_entry_ratio": 7,
+      "m_min": 1.1335,
+      "m_max": 6.1706,
+      "quiet_frames": 14
+    },
+    "111.069-114.103": {
+      "frames": 16,
+      "above_entry_ratio": 16,
+      "m_min": 7.9177,
+      "m_max": 19.5355,
+      "quiet_frames": 0
+    },
+    "114.103-120": {
+      "frames": 31,
+      "above_entry_ratio": 31,
+      "m_min": 19.7927,
+      "m_max": 37.2837,
+      "quiet_frames": 0
+    },
+    "120-150": {
+      "frames": 155,
+      "above_entry_ratio": 155,
+      "m_min": 11.7632,
+      "m_max": 40.8291,
+      "quiet_frames": 0
+    },
+    "150-200": {
+      "frames": 255,
+      "above_entry_ratio": 155,
+      "m_min": 1.3261,
+      "m_max": 35.1848,
+      "quiet_frames": 4
+    }
+  },
+  "entry_ratio": 4.0,
+  "slow_window_s": 10.0,
+  "entry_confirm_frames": 8
+}

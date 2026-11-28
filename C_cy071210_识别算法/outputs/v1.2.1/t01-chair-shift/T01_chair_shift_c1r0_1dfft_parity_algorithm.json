@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "T01_chair_shift_c1r0_1dfft_parity",
+  "algorithm_version": "M1 v1.2.1",
+  "parameter_version": "59f80b09",
+  "capabilities": {
+    "presence": true,
+    "posture": false,
+    "posture_semantics": "M2 v0.1 gated baseline: pipeline implemented (reference calibration, centroid/energy features, contrast quality gate, threshold classification with reject guards). posture=true means the pipeline ran; recordings failing the contrast gate output posture=unknown with calibration_status=invalid for all occupied frames (explicit rejection, not placeholder). See notes."
+  },
+  "config": {
+    "algorithm": "M1",
+    "config": {
+      "schema_version": "1.2.1",
+      "algorithm": "M1",
+      "feature_set": "v1.2.1",
+      "algorithm_version": "M1 v1.2.1",
+      "model_version": "M1-v1.2.1",
+      "description": "M1 v1.2.1 for DEV112P 1dfft parity recordings: (R1) odd/even chirp chains kept separate, each with its own backing; (R2) opening empty-seat calibration for 10 s of valid frames before occupancy judgement is enabled (no 1-frame background lock, no opening false alarm); (R3) F1 background residual normalised by the leakage bin (bin/|bin0|) so the 2.9x site-to-site amplitude spread and the -1.9..-6.2 %/min thermal drift no longer masquerade as occupancy, and the empty-seat decision is driven by the Bin1 micro-motion evidence (detrended frame-to-frame amplitude change, normalised by the opening-empty motion floor). Still-sitting is kept by the 5 s release confirmation; a walk-away releases as soon as the Bin1 micro-motion returns to the empty band for release_frames and the leakage-normalised F1 residual is back within gate, then the empty snapshot is rebuilt from the last 10 s. Fast release path: a slow step/drift that lifts the 10 s motion while Bin1 instantaneous change and F1 stay at the empty level is not treated as occupancy (fast_release_*), so the release is not pushed back by slow steps (849-frame field: 22.2 s -> 12.1 s). Config frozen for the C v1.2.1 fix task; v1.2 results (config/M1_dev112p_v0.2.json) are unchanged.",
+      "chirp_parity": {
+        "enabled": true,
+        "note": "tx_polling=1: odd/even chirps differ ~11x in amplitude (T01 odd ~16200 / even ~1450 counts); averaging them gave the frame-0 +139 counts seed bias."
+      },
+      "calibration": {
+        "empty_accumulate_s": 10.0,
+        "min_valid_frames": 40,
+        "warmup_guard_s": 6.0,
+        "floor_percentile": 20.0
+      },
+      "micro_motion": {
+        "window_s": 10.0,
+        "fast_window_s": 4.0,
+        "bin": 1,
+        "entry_ratio": 4.0,
+        "entry_confirm_frames": 8,
+        "release_ratio": 1.45,
+        "release_frames": 26,
+        "floor_alpha": 0.02,
+        "floor_min_ratio": 0.8,
+        "fast_release_m_max": 6.0,
+        "fast_release_inst_max": 3.5,
+        "fast_release_f1_max": 0.2,
+        "entry_verify_frames": 8,
+        "entry_verify_f1_min": 0.2
+      },
+      "f1": {
+        "normalization": "leakage_ratio",
+        "db_floor": 3.0,
+        "db_span": 10.0,
+        "gate": 0.6,
+        "entry_motion_support": 1.8,
+        "entry_support_enabled": false,
+        "stable_change_db": 6.0,
+        "ref_alpha": 0.1
+      },
+      "windows": {
+        "f2_s": 4.0,
+        "f3_s": 4.0
+      },
+      "f2_norm_rad": 0.03,
+      "f3_band_hz": [
+        0.1,
+        0.5
+      ],
+      "quality": {
+        "low_signal_db": -60.0
+      },
+      "target_count_policy": "1 when presence=1 (single-seat region assumption, documented), 0 when empty, -1 when unknown",
+      "confidence": {
+        "floor": 0.6,
+        "span": 0.39
+      }
+    },
+    "config_source": "config/M1_dev112p_v1.2.1.json",
+    "region_params": {
+      "schema_version": "0.1",
+      "range_resolution_m": 0.6,
+      "note": "Nominal installation values from project plan 5.2 (24-24.25 GHz sweep -> 0.6 m resolution). Replace with measured values after real installation. Coarse-granularity risk documented: plan A region spans only ~3-4 bins.",
+      "plans": {
+        "A": {
+          "mount_height_m": 0.75,
+          "distance_to_seat_m": [
+            0.5,
+            1.0
+          ],
+          "pitch_deg": -10.0,
+          "region_m": [
+            0.4,
+            1.3
+          ]
+        },
+        "B": {
+          "mount_height_m": 2.0,
+          "distance_to_seat_m": [
+            1.8,
+            2.2
+          ],
+          "pitch_deg": -45.0,
+          "region_m": [
+            1.5,
+            2.5
+          ]
+        }
+      },
+      "angle_compensation_deg": {
+        "H": {
+          "TX1-RX4": -93.0,
+          "TX1-RX3": -88.0
+        },
+        "E": {
+          "TX1-RX1": 10.0,
+          "TX1-RX4": -55.0,
+          "TX2-RX3": -16.0
+        }
+      },
+      "bin_conversion": "bin_lo = floor(region_m[0] / range_resolution_m); bin_hi = ceil(region_m[1] / range_resolution_m); clip to [0, n_range_bins-1]"
+    },
+    "degraded_input": false,
+    "region": {
+      "lo": 1,
+      "hi": 3,
+      "main_bin": 2,
+      "source": "meta_explicit"
+    }
+  },
+  "window_s": 4.0,
+  "smoothing": "dual-threshold hysteresis T_ON=0.5 T_OFF=0.35, confirm_frames=1",
+  "model_version": "M1-v1.2.1",
+  "calibrations": [],
+  "notes": [
+    "v1.2.1 calibration: 53 valid frames over 10.1s; empty motion floor=0.00153 (P20); F1 ref=-50.8 dB",
+    "v1.2.1 release at t=55.9s: empty snapshot rebuilt (1), floor=0.00253"
+  ]
+}

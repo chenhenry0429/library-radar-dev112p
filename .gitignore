@@ -14,6 +14,9 @@ Thumbs.db
 *.npy
 *.npz
 !DEMO_ONLY/release_demo/**/*_raw.npz
+!**/examples/real/**/*.npz
+!**/examples/real_v121/**/*.npz
+!**/examples/live_v121/**/*.npz
 /output/
 /outputs/
 /recordings/
@@ -21,6 +24,7 @@ Thumbs.db
 /private-data/
 /work/
 /tmp/
+*_selftest_tmp/
 /DEMO_ONLY/*
 !/DEMO_ONLY/release_demo/
 *.lic

@@ -1,0 +1,20 @@
+{
+  "recording_id": "T01_http_live_20261123_201242_733416",
+  "seat_id": "T01",
+  "C_commit": "ab409fdcdae21b8c93aef4794bb0daa92aa144c8",
+  "planned_distance_cm": 20,
+  "distance_measured_in_this_session": null,
+  "stopwatch_alignment_s": null,
+  "recording_stopped_by_operator": true,
+  "stopwatch_events": [
+    {
+      "event": "seated_still",
+      "stopwatch_s": 38.03
+    },
+    {
+      "event": "walked_away",
+      "stopwatch_s": 86.43
+    }
+  ],
+  "post_departure_disturbance_reported": null
+}

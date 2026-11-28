@@ -1,0 +1,116 @@
+{
+  "frames": 484,
+  "last_nominal_s": 93.4605,
+  "stopwatch_s": [
+    29.48,
+    58.06
+  ],
+  "v12": {
+    "segments": {
+      "opening": {
+        "empty": 0,
+        "occupied": 67,
+        "unknown": 0,
+        "calibrating": 0,
+        "frames": 67
+      },
+      "seated": {
+        "empty": 0,
+        "occupied": 112,
+        "unknown": 0,
+        "calibrating": 0,
+        "frames": 112
+      },
+      "away": {
+        "empty": 0,
+        "occupied": 168,
+        "unknown": 0,
+        "calibrating": 0,
+        "frames": 168
+      }
+    },
+    "transitions": [
+      {
+        "time_s": 1.548,
+        "from": 0,
+        "to": 1
+      }
+    ],
+    "warnings": [
+      "background: snapshot #1 frozen (K_eff=1 frames)"
+    ],
+    "presence_counts": {
+      "0": 8,
+      "1": 476
+    }
+  },
+  "v121": {
+    "segments": {
+      "opening": {
+        "empty": 7,
+        "occupied": 18,
+        "unknown": 0,
+        "calibrating": 42,
+        "frames": 67
+      },
+      "seated": {
+        "empty": 0,
+        "occupied": 112,
+        "unknown": 0,
+        "calibrating": 0,
+        "frames": 112
+      },
+      "away": {
+        "empty": 135,
+        "occupied": 33,
+        "unknown": 0,
+        "calibrating": 0,
+        "frames": 168
+      }
+    },
+    "transitions": [
+      {
+        "time_s": 11.61,
+        "from": 0,
+        "to": 1
+      },
+      {
+        "time_s": 67.5315,
+        "from": 1,
+        "to": 0
+      }
+    ],
+    "warnings": [
+      "v1.2.1 calibration: 53 valid frames over 10.1s; empty motion floor=0.00190 (P20); F1 ref=-52.0 dB",
+      "v1.2.1 release at t=67.5s: empty snapshot rebuilt (1), floor=0.00339"
+    ],
+    "presence_counts": {
+      "0": 195,
+      "1": 289
+    },
+    "tail_micro_motion": {
+      "m_min": 0.6141,
+      "m_median": 0.8919,
+      "quiet_frames": 160,
+      "longest_consecutive_quiet_frames": 160,
+      "required_quiet_frames": 26
+    },
+    "A": {
+      "accepted": 484,
+      "state_changes": [
+        {
+          "time_s": 13.7385,
+          "from": "unknown",
+          "to": "in_use"
+        },
+        {
+          "time_s": 70.6275,
+          "from": "in_use",
+          "to": "leave_wait"
+        }
+      ],
+      "state_at_end": "leave_wait",
+      "at_end_remaining_s": 37.167
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "recording_id": "T01_P04_retest_c1r0_1dfft_parity",
+  "seat_id": "T01",
+  "subject_id": "P04",
+  "session_id": "R01",
+  "source_kind": "measured",
+  "capture_start": "2026-11-12T19:41:47+08:00",
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": "derived: frame_id x nominal_frame_period (0.1935 s) from first captured frame group (frame 0 may be partial); not wall-clock aligned; raw .dat write window 19:41:47-19:44:29 per field log; pending confirmation with B-side acquisition (Chen Zhixuan)",
+  "data_level": "1dfft",
+  "raw_shape": [
+    504,
+    2,
+    8
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "chirp_parity",
+    "range_bin"
+  ],
+  "value_unit": "device_fft_counts",
+  "iq_representation": "complex64 I/Q (device 1dfft output, odd/even chirp means kept separate for v1.2.1); no DC removal applied",
+  "nominal_frame_rate_hz": 5.167958656330749,
+  "radar_config": {
+    "nominal_frame_period_s": 0.1935,
+    "nominal_frame_rate_hz": 5.167958656330749,
+    "range_bin_distance_m": null,
+    "tx_polling": 1,
+    "n_range_bins": 8,
+    "n_doppler_bins": null,
+    "doppler_dc_index": null,
+    "source_archive": {
+      "format": "dev112p_decoded_1dfft_archive",
+      "archive_version": 1,
+      "recording_id": "T01_P04_retest",
+      "device_model": "DEV112P",
+      "raw_shape": [
+        504,
+        2,
+        2,
+        64,
+        8,
+        2
+      ],
+      "raw_dtype": "int16"
+    },
+    "postprocess": {
+      "chip_rx_selected": [
+        1,
+        0
+      ],
+      "chirp_merge": "odd/even chirp split: complex mean per parity (parity 0 = chirp index 0,2,4..., parity 1 = 1,3,5...)"
+    },
+    "note": "derived from B-side dev112p archive; chip/rx selection and chirp merge are lossy projections, see postprocess"
+  },
+  "annotation": {
+    "actual_action_timestamps_available": true,
+    "stopwatch_events": [
+      {
+        "time_s": 20.33,
+        "event": "首次坐稳"
+      },
+      {
+        "time_s": 38.04,
+        "event": "后靠到位"
+      },
+      {
+        "time_s": 57.39,
+        "event": "第一次走远"
+      },
+      {
+        "time_s": 70.67,
+        "event": "返回坐稳"
+      },
+      {
+        "time_s": 86.51,
+        "event": "第二次走远"
+      }
+    ],
+    "stopwatch_origin": "operator clicked Start",
+    "plan_is_ground_truth": false
+  },
+  "installation": {
+    "position": "field trial seat T01; no geometric calibration (range bins uncalibrated); radar-to-chest ~60 cm per field log note, unverified",
+    "height_m": null,
+    "angle_deg": null,
+    "region_m": null,
+    "region_bins": [
+      1,
+      3
+    ],
+    "main_bin": 2,
+    "plan": null
+  },
+  "capture_notes": "operator deviated from scripted plan; plan times are verbal commands, NOT ground truth (actual_action_timestamps_available=false). chip0 bin0 has 3.1% int16 negative saturation; chip1/rx0 selected (cleanest breathing evidence, no saturation). Frames 0 (200/256 chirps) and 839 (92/256) are partial; 1dfft uses valid-chirp mean, 2dfft zero-fills missing chirps (sinc artifacts in those two frames). Range bins not calibrated to meters; region_bins/main_bin were signal-calibrated during pilot bring-up (breathing evidence, not geometry) -- treat as per-seat calibration pending geometric survey."
+}

@@ -1,0 +1,23 @@
+{
+  "recording_id": "T01_20261124_113708",
+  "stopwatch_unit": "seconds",
+  "stopwatch_to_radar_offset_s": null,
+  "actions": [
+    {
+      "time_s": 65.84,
+      "event": "实际走远"
+    }
+  ],
+  "field_observations": {
+    "display_stopwatch_s": {
+      "first_empty": 27.04,
+      "occupied_observations": [
+        33.37,
+        44.96,
+        82.88
+      ],
+      "countdown_started": 97.62,
+      "available_after_countdown": 155.8
+    }
+  }
+}

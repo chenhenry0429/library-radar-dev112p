@@ -83,6 +83,9 @@ class M1V121State:
         # 参数
         "entry_ratio", "entry_confirm", "release_ratio", "release_frames",
         "win_slow", "win_fast", "motion_bin", "floor_alpha", "floor_min_ratio",
+        "fast_rel_m_max", "fast_rel_inst_max", "fast_rel_f1_max",
+        "conf_floor", "conf_span", "entry_verify", "entry_verify_f1_min",
+        "verify_left", "verify_bad",
         "calib_s", "calib_min_frames", "warmup_guard", "floor_pct",
         "f1_db_floor", "f1_db_span", "f1_gate", "f1_entry_support", "f1_ref_alpha",
         "f1_entry_enabled", "f1_change_max_db",
@@ -96,9 +99,10 @@ class M1V121State:
         # 输出轨迹
         "presence", "conf", "quality", "score", "f1n", "f2n", "f3n", "f4n",
         "gate", "f23_win", "m_trace", "m4_trace", "f1db_trace", "calibrating",
+        "m_inst_trace", "calib_inst",
         # 历史
         "ts_hist", "amp_hist", "phase_hist", "main_hist", "q_amp_hist", "q_ts",
-        "act_slow_hist", "act_fast_hist",
+        "act_slow_hist", "act_fast_hist", "inst_hist", "inst_floor",
         # 标定
         "calib_amp_sum", "calib_cnt", "calib_done", "calib_act", "calib_f1", "bg_amp",
         "calib_end_ts", "floor_calib",
@@ -119,6 +123,22 @@ class M1V121State:
         self.motion_bin = int(_get(cfg, ["micro_motion", "bin"], 1))
         self.floor_alpha = float(_get(cfg, ["micro_motion", "floor_alpha"], 0.02))
         self.floor_min_ratio = float(_get(cfg, ["micro_motion", "floor_min_ratio"], 0.8))
+        # 判空快通道：慢窗被“慢漂移/慢台阶”抬起来、但没有真实微动时，
+        # 允许按瞬时变化 + 背景未变判空（849 帧现场：走远后 73–82 s 的慢台阶
+        # 把 m 抬到 5，但瞬时变化只有空座水平，导致释放被推迟约 13 s）。
+        self.fast_rel_m_max = float(_get(cfg, ["micro_motion", "fast_release_m_max"], 6.0))
+        self.fast_rel_inst_max = float(_get(cfg, ["micro_motion", "fast_release_inst_max"], 3.5))
+        self.fast_rel_f1_max = float(_get(cfg, ["micro_motion", "fast_release_f1_max"], 0.2))
+        # presence_confidence = 判决置信度（给 A 的 0.60 门槛用）：按“离相反
+        # 判决的余量”映射到 [floor, floor+span]，标定/整窗等待期仍是 0.5（无效）。
+        self.conf_floor = float(_get(cfg, ["confidence", "floor"], 0.60))
+        self.conf_span = float(_get(cfg, ["confidence", "span"], 0.39))
+        # 入场核验：确认后先等 entry_verify_frames 帧，要求 f1n 保持 ≥ 阈值；
+        # 连续 2 帧低于阈值（或 occ 消失）即否决本次入场（瞬态不经 A 确认）。
+        self.entry_verify = int(_get(cfg, ["micro_motion", "entry_verify_frames"], 8))
+        self.entry_verify_f1_min = float(_get(cfg, ["micro_motion", "entry_verify_f1_min"], 0.2))
+        self.verify_left = 0
+        self.verify_bad = 0
         self.calib_s = float(_get(cfg, ["calibration", "empty_accumulate_s"], 10.0))
         self.calib_min_frames = max(1, int(_get(cfg, ["calibration", "min_valid_frames"], 40)))
         self.warmup_guard = float(_get(cfg, ["calibration", "warmup_guard_s"], 6.0))
@@ -164,6 +184,7 @@ class M1V121State:
         self.score, self.f1n, self.f2n, self.f3n, self.f4n = [], [], [], [], []
         self.gate, self.f23_win = [], []
         self.m_trace, self.m4_trace, self.f1db_trace = [], [], []
+        self.m_inst_trace = []
         self.calibrating = []
         # 历史
         self.ts_hist = []
@@ -173,6 +194,7 @@ class M1V121State:
         self.q_amp_hist = [[] for _ in range(self.n_parity)]
         self.act_slow_hist = [[] for _ in range(self.n_parity)]
         self.act_fast_hist = [[] for _ in range(self.n_parity)]
+        self.inst_hist = []          # 每帧 Bin1 瞬时相对变化（parity 平均）
         # 标定
         self.calib_amp_sum = np.zeros((self.n_parity, self.nb), dtype=np.float64)
         self.calib_cnt = 0
@@ -180,10 +202,12 @@ class M1V121State:
         self.calib_end_ts = None
         self.calib_act = []
         self.calib_f1 = []
+        self.calib_inst = []
         self.bg_amp = np.zeros((self.n_parity, self.nb), dtype=np.float64)
         self.valid_frames = 0
         self.floor = None
         self.floor_calib = None
+        self.inst_floor = None
         self.f1_ref_db = None
         # 判决
         self.state = 0
@@ -204,6 +228,9 @@ class M1V121State:
         acts = [v for v in self.calib_act if v > 0]
         self.floor = max(float(np.percentile(acts, self.floor_pct)), 1e-6) if acts else 1e-3
         self.floor_calib = self.floor
+        insts = [v for v in self.calib_inst if v > 0]
+        self.inst_floor = max(float(np.percentile(insts, self.floor_pct)),
+                              1e-6) if insts else self.floor
         # F1 参考：用刚建立的背景回算标定帧的泄漏归一残差（标定期 bg 尚未建立，
         # 逐帧累计的 calib_f1 全为 0，不能用作参考）
         qs = np.stack([np.asarray(self.q_amp_hist[p]) for p in range(self.n_parity)], axis=1)
@@ -277,6 +304,7 @@ class M1V121State:
         self.f23_win.append(0.0)
         self.m_trace.append(0.0)
         self.m4_trace.append(0.0)
+        self.m_inst_trace.append(0.0)
         self.f1db_trace.append(0.0)
         self.calibrating.append(0)
 
@@ -302,6 +330,16 @@ class M1V121State:
             a0 = abs(xp[0]) if abs(xp[0]) > 1e-12 else 1.0
             self.q_amp_hist[p].append(np.abs(xp) / a0)
 
+        # Bin1 瞬时相对变化（parity 平均）：对“慢台阶/慢漂移”不敏感，
+        # 用于判空快通道与诊断（组员原始要求里的“瞬间变化量”）。
+        inst_now = 0.0
+        for p in range(self.n_parity):
+            h = self.amp_hist[p]
+            if len(h) >= 2:
+                inst_now += abs(h[-1] - h[-2]) / (h[-2] + 1e-9)
+        inst_now /= float(self.n_parity)
+        self.inst_hist.append(inst_now)
+
         # ---- 微动（去趋势幅度标准差 / 均值）----
         lo_s, lo_f = self._windows(float(ts_t))
         m_slow = m_fast = 0.0
@@ -319,6 +357,8 @@ class M1V121State:
             m_fast += a_fast
         m_slow /= float(self.n_parity)
         m_fast /= float(self.n_parity)
+        inst_win = (float(np.mean(np.asarray(self.inst_hist[lo_s:t + 1])))
+                    if t - lo_s + 1 >= 6 else 0.0)
 
         # ---- F1（泄漏归一幅度残差，dB）----
         f1_db = self._f1_db(np.stack([self.q_amp_hist[p][-1] for p in range(self.n_parity)]))
@@ -349,6 +389,8 @@ class M1V121State:
             self.calib_cnt += 1
             if t >= 1:
                 self.calib_act.append(m_slow)
+            if t >= 2 and inst_win > 0:
+                self.calib_inst.append(inst_win)
             self.calib_f1.append(float(f1_db))
             self.calibrating[t] = 1
             if self._calib_ready(float(ts_t)):
@@ -370,8 +412,10 @@ class M1V121State:
         # ---- 标定后 ----
         m = m_slow / self.floor if self.floor else 0.0
         m4 = m_fast / self.floor if self.floor else 0.0
+        m_inst = inst_win / self.inst_floor if self.inst_floor else 0.0
         self.m_trace[t] = m
         self.m4_trace[t] = m4
+        self.m_inst_trace[t] = m_inst
 
         # 空座期噪声底 / F1 空座基线缓跟踪：**只在无人态**更新。占用态冻结，
         # 否则静坐者的低微动会被当成新空座吸收（T01/P02 114–126 s 实测：
@@ -406,6 +450,14 @@ class M1V121State:
         occ = (m >= self.entry_ratio) or (
             self.f1_entry_enabled and m >= self.f1_entry_support and f1n >= self.f1_gate)
         quiet_motion = (m <= self.release_ratio) and (m4 <= self.release_ratio * 1.5)
+        if not quiet_motion:
+            # 判空快通道：慢窗被慢台阶/慢漂移抬起（m ≤ 6），但 Bin1 瞬时变化仍是
+            # 空座水平、且背景 F1 没有变化 → 视为空座证据。849 帧现场 73–82 s 的
+            # 慢台阶（m≈5、m_inst≈0.7、f1n=0）因此不再把释放推迟 13 s；
+            # 静止等静坐者（P02 f1n=1.0、P04 f1n≈0.7）不满足 f1 条件，仍保持有人。
+            quiet_motion = ((m <= self.fast_rel_m_max)
+                            and (m_inst <= self.fast_rel_inst_max)
+                            and (f1n <= self.fast_rel_f1_max))
         if self.state == 1:
             self.empty_run = self.empty_run + 1 if quiet_motion else 0
         else:
@@ -420,27 +472,58 @@ class M1V121State:
                 and (f1_change <= self.f1_change_max_db)
             want = 0 if released else 1
 
-        if want != self.state:
+        if self.verify_left > 0:
+            # 入场核验期：presence 保持 0，不参与 A 的确认；连续 2 帧背景
+            # 回到空座（f1n 低）或微动消失即否决。
+            if (not occ) or f1n < self.entry_verify_f1_min:
+                self.verify_bad += 1
+            else:
+                self.verify_bad = 0
+            if self.verify_bad >= 2:
+                self.verify_left = 0
+                self.verify_bad = 0
+                self.cand = 0
+            else:
+                self.verify_left -= 1
+                if self.verify_left == 0:
+                    self.state = 1
+                    self.cand = 0
+        elif want != self.state:
             if want == self.cand_state:
                 self.cand += 1
             else:
                 self.cand_state, self.cand = want, 1
             need = self.entry_confirm if want == 1 else 1
             if self.cand >= need:
-                self.state = want
-                self.cand = 0
-                if want == 0:
-                    self._resnapshot(float(ts_t))
+                if want == 1 and self.entry_verify > 0:
+                    # 入场核验：先保持空座 8 帧，要求背景 F1 仍与空座有差异。
+                    # 第二轮现场第 123 帧是拉椅/接近造成的 4.6% 瞬态，8 帧确认
+                    # 通过、但 7 帧后背景又回到空座（f1n 1.0→0）——核验期否决，
+                    # 避免“人未坐下页面先报占用”。
+                    self.verify_left = self.entry_verify
+                    self.verify_bad = 0
+                    self.cand = 0
+                else:
+                    self.state = want
+                    self.cand = 0
+                    if want == 0:
+                        self._resnapshot(float(ts_t))
         else:
             self.cand = 0
         self.presence[t] = self.state
 
-        # 兼容旧口径的 0–1 证据分数（A 端 conf 显示；非阈值依据）
+        # 0–1 证据分数（诊断用）；presence_confidence 表示“对当前判决的置信度”，
+        # 不能再用 |2score−1| 的信息量口径：那会在判空后、m 处于中间带时把
+        # conf 压到 0.5x（现场第二轮：第 848 帧判空但 conf=0.525 < A 的 0.60 门槛，
+        # A 不采信这条空座证据，3 s 连续判空被打断）。现在按“离相反判决的余量”
+        # 给置信度：判空时 m 越低越可信，判人时 m 越高越可信。
         span = max(self.entry_ratio - self.release_ratio, 1e-6)
         self.score[t] = float(np.clip((m - self.release_ratio) / span, 0.0, 1.0))
-        c = float(np.clip(0.5 + 0.49 * abs(2.0 * self.score[t] - 1.0), 0.5, 0.99))
+        margin = self.score[t] if self.state == 1 else (1.0 - self.score[t])
+        c = float(np.clip(self.conf_floor + self.conf_span * margin,
+                          self.conf_floor, 0.99))
         if self.calibrating[t]:
-            c = min(c, 0.8)
+            c = 0.5
         self.conf[t] = c
 
     def _resnapshot(self, ts_t):

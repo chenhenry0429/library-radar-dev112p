@@ -1,0 +1,176 @@
+{
+  "recording_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e",
+  "source_commit": "f4089c5826019fcca1f2fda7708fc69250b2ef0c",
+  "time_base": "nominal device counter",
+  "config_from_site_snapshot": {
+    "presence_confirm_s": 2,
+    "absence_confirm_s": 3,
+    "release_wait_s": 60,
+    "posture_confirm_s": 2,
+    "remind_after_s": 10,
+    "reference_reset_s": 3,
+    "unknown_clear_s": 3,
+    "cooldown_s": 60,
+    "review_after_s": 30,
+    "data_gap_s": 2,
+    "presence_confidence_min": 0.6,
+    "posture_confidence_min": 0.6
+  },
+  "field_algorithm_parameter_version": "b39400d2+online-v0.1",
+  "archive_algorithm_parameter_version": "05ad3a34+online-v0.1",
+  "field_result_frames": [
+    0,
+    906
+  ],
+  "full_replay_frames": [
+    0,
+    919
+  ],
+  "tail_only_frames": [
+    907,
+    919
+  ],
+  "tail_presence_values": [
+    1
+  ],
+  "field_occupancy_events": [
+    {
+      "timestamp": 23.22,
+      "frame_id": 120,
+      "seat_id": "T01",
+      "session_id": "",
+      "event_type": "occupancy_change",
+      "from_state": "unknown",
+      "to_state": "idle",
+      "reason": "continuous valid absence confirmed"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "occupancy_change",
+      "from_state": "idle",
+      "to_state": "in_use",
+      "reason": "continuous valid presence confirmed"
+    }
+  ],
+  "pre_leave_valid_absence_runs": [
+    {
+      "first_frame": 834,
+      "last_frame": 847,
+      "duration_s": 2.5155
+    },
+    {
+      "first_frame": 849,
+      "last_frame": 856,
+      "duration_s": 1.3545
+    }
+  ],
+  "comparison_commit": "9c34389",
+  "candidate_commit": "6e06fd3",
+  "old_frame_848_confidence": 0.5252279590855788,
+  "candidate_frame_848_confidence": 0.7849603019965553,
+  "candidate_changed_presence_labels": 0,
+  "candidate_occupancy_events": [
+    {
+      "timestamp": 23.22,
+      "frame_id": 120,
+      "seat_id": "T01",
+      "session_id": "",
+      "event_type": "occupancy_change",
+      "from_state": "unknown",
+      "to_state": "idle",
+      "reason": "continuous valid absence confirmed"
+    },
+    {
+      "timestamp": 25.929000000000002,
+      "frame_id": 134,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "occupancy_change",
+      "from_state": "idle",
+      "to_state": "in_use",
+      "reason": "continuous valid presence confirmed"
+    },
+    {
+      "timestamp": 164.475,
+      "frame_id": 850,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "occupancy_change",
+      "from_state": "in_use",
+      "to_state": "leave_wait",
+      "reason": "continuous valid absence confirmed; waiting starts now"
+    },
+    {
+      "timestamp": 167.958,
+      "frame_id": 868,
+      "seat_id": "T01",
+      "session_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e-seat-0001",
+      "event_type": "occupancy_change",
+      "from_state": "leave_wait",
+      "to_state": "in_use",
+      "reason": "presence reconfirmed; same seat session resumed"
+    }
+  ],
+  "candidate_end_state": "in_use",
+  "archive_key_frames": [
+    {
+      "frame_id": 123,
+      "timestamp": 23.8005,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 134,
+      "timestamp": 25.929000000000002,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 834,
+      "timestamp": 161.379,
+      "presence": 0,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 848,
+      "timestamp": 164.088,
+      "presence": 0,
+      "presence_confidence": 0.5252279590855788,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 857,
+      "timestamp": 165.8295,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 906,
+      "timestamp": 175.311,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 907,
+      "timestamp": 175.5045,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    },
+    {
+      "frame_id": 919,
+      "timestamp": 177.8265,
+      "presence": 1,
+      "presence_confidence": 0.99,
+      "quality": "ok"
+    }
+  ]
+}

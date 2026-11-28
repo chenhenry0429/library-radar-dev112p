@@ -84,7 +84,8 @@ class M1V121State:
         "entry_ratio", "entry_confirm", "release_ratio", "release_frames",
         "win_slow", "win_fast", "motion_bin", "floor_alpha", "floor_min_ratio",
         "fast_rel_m_max", "fast_rel_inst_max", "fast_rel_f1_max",
-        "conf_floor", "conf_span",
+        "conf_floor", "conf_span", "entry_verify", "entry_verify_f1_min",
+        "verify_left", "verify_bad",
         "calib_s", "calib_min_frames", "warmup_guard", "floor_pct",
         "f1_db_floor", "f1_db_span", "f1_gate", "f1_entry_support", "f1_ref_alpha",
         "f1_entry_enabled", "f1_change_max_db",
@@ -132,6 +133,12 @@ class M1V121State:
         # 判决的余量”映射到 [floor, floor+span]，标定/整窗等待期仍是 0.5（无效）。
         self.conf_floor = float(_get(cfg, ["confidence", "floor"], 0.60))
         self.conf_span = float(_get(cfg, ["confidence", "span"], 0.39))
+        # 入场核验：确认后先等 entry_verify_frames 帧，要求 f1n 保持 ≥ 阈值；
+        # 连续 2 帧低于阈值（或 occ 消失）即否决本次入场（瞬态不经 A 确认）。
+        self.entry_verify = int(_get(cfg, ["micro_motion", "entry_verify_frames"], 8))
+        self.entry_verify_f1_min = float(_get(cfg, ["micro_motion", "entry_verify_f1_min"], 0.2))
+        self.verify_left = 0
+        self.verify_bad = 0
         self.calib_s = float(_get(cfg, ["calibration", "empty_accumulate_s"], 10.0))
         self.calib_min_frames = max(1, int(_get(cfg, ["calibration", "min_valid_frames"], 40)))
         self.warmup_guard = float(_get(cfg, ["calibration", "warmup_guard_s"], 6.0))
@@ -465,17 +472,42 @@ class M1V121State:
                 and (f1_change <= self.f1_change_max_db)
             want = 0 if released else 1
 
-        if want != self.state:
+        if self.verify_left > 0:
+            # 入场核验期：presence 保持 0，不参与 A 的确认；连续 2 帧背景
+            # 回到空座（f1n 低）或微动消失即否决。
+            if (not occ) or f1n < self.entry_verify_f1_min:
+                self.verify_bad += 1
+            else:
+                self.verify_bad = 0
+            if self.verify_bad >= 2:
+                self.verify_left = 0
+                self.verify_bad = 0
+                self.cand = 0
+            else:
+                self.verify_left -= 1
+                if self.verify_left == 0:
+                    self.state = 1
+                    self.cand = 0
+        elif want != self.state:
             if want == self.cand_state:
                 self.cand += 1
             else:
                 self.cand_state, self.cand = want, 1
             need = self.entry_confirm if want == 1 else 1
             if self.cand >= need:
-                self.state = want
-                self.cand = 0
-                if want == 0:
-                    self._resnapshot(float(ts_t))
+                if want == 1 and self.entry_verify > 0:
+                    # 入场核验：先保持空座 8 帧，要求背景 F1 仍与空座有差异。
+                    # 第二轮现场第 123 帧是拉椅/接近造成的 4.6% 瞬态，8 帧确认
+                    # 通过、但 7 帧后背景又回到空座（f1n 1.0→0）——核验期否决，
+                    # 避免“人未坐下页面先报占用”。
+                    self.verify_left = self.entry_verify
+                    self.verify_bad = 0
+                    self.cand = 0
+                else:
+                    self.state = want
+                    self.cand = 0
+                    if want == 0:
+                        self._resnapshot(float(ts_t))
         else:
             self.cand = 0
         self.presence[t] = self.state

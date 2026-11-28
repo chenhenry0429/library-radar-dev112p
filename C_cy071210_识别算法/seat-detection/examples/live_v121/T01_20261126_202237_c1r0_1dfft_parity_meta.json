@@ -1,0 +1,65 @@
+{
+  "recording_id": "T01_20261126_202237_parity",
+  "seat_id": "T01",
+  "data_level": "1dfft",
+  "radar_config": {
+    "nominal_frame_period_s": 0.1935,
+    "nominal_frame_rate_hz": 5.167958656330749,
+    "tx_polling": 1,
+    "range_bin_distance_m": null,
+    "chirp_to_physical_tx_mapping": null
+  },
+  "installation": {
+    "region_bins": [
+      1,
+      3
+    ],
+    "main_bin": 2
+  },
+  "timestamp_unit": "seconds",
+  "timestamp_origin": "recording_start",
+  "timestamp_source": "nominal_device_counter",
+  "replay": true,
+  "schema_version": "1.0",
+  "source_kind": "measured",
+  "raw_shape": [
+    920,
+    2,
+    8
+  ],
+  "raw_dtype": "complex64",
+  "axis_order": [
+    "frame",
+    "chirp_parity",
+    "range_bin"
+  ],
+  "shape_scope": "recording",
+  "session_frame_count": 920,
+  "source_recording_id": "DEV112P_7121d13fc4134c02bd4f8d3bc8095e5e",
+  "capture_start": "2026-11-26T20:22:37+08:00",
+  "capture_start_source": "ONELAB recording directory timestamp",
+  "value_unit": "device_fft_counts",
+  "annotation": {
+    "actual_action_timestamps_available": true,
+    "stopwatch_events": [
+      {
+        "time_s": 51.11,
+        "event": "坐稳"
+      },
+      {
+        "time_s": 95.54,
+        "event": "实际走远"
+      }
+    ],
+    "stopwatch_origin": "operator clicked Start",
+    "plan_is_ground_truth": false
+  },
+  "projection": {
+    "chip": 1,
+    "rx": 0,
+    "chirp_parity": [
+      "even",
+      "odd"
+    ]
+  }
+}

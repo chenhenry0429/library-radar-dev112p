@@ -22,7 +22,10 @@
     <div class="cards">
       <section class="card seat" id="seat-card" data-tone="waiting" aria-labelledby="seat-heading">
         <div class="seat-top"><h2 id="seat-heading">座位状态</h2><span class="seat-id" id="seat-id" hidden></span></div>
-        <div class="chair" aria-hidden="true"><i></i><b></b></div>
+        <div class="radar" aria-hidden="true">
+          <div class="radar-dial"></div>
+          <div class="chair"><i></i><b></b></div>
+        </div>
         <div class="seat-feedback" role="status">
           <strong id="seat-status">待确认</strong>
           <p id="seat-note">正在连接座位监测服务。</p>
@@ -32,6 +35,7 @@
 
       <section class="card posture" id="pose-card" data-tone="waiting" aria-labelledby="pose-heading">
         <h2 id="pose-heading">坐姿提醒</h2>
+        <span class="posture-icon" aria-hidden="true"></span>
         <div class="pose-feedback" role="status">
           <strong id="pose-status">等待座位状态</strong>
           <p id="pose-note">座位投入使用后显示坐姿反馈。</p>

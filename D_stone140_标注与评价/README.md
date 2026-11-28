@@ -29,3 +29,7 @@ python evaluate_presence.py 采集_result.csv labels.csv annotation.json 采集_
 既有 P01–P04 已用于开发，split 中全列 development；独立 validation/test 为空，冻结后需新参与者/录制。生成器不回头假设已看过数据属于独立测试。
 
 待办：B 确认时钟/动作记录，D 人工复核标签，C 交付同录制的预测及说明，再运行独立评价。P01/P03 不从 C 的基线边界反造真值。
+
+## 现场复验记录
+
+- [2026-11-26 T01 第二轮现场计时表](2026-11-26_T01第二轮现场计时表.md)。含雷达首帧、现场动作、页面反馈和走远后未启动倒计时的观察。

@@ -34,6 +34,62 @@ DEV112P 配置通过 `allow_nominal_live_time` 显式选择设备帧计数推算
 
 现场程序的交付、时间约定和验收步骤见[真机对接与验收清单](../对接事宜/2026-11-24_A_B_C一键检测真机联调.md)。
 
+
+### Windows 采集电脑配置 DEV112P
+
+在连接雷达的 Windows 电脑上操作。先打开 ONELAB，连接 DEV112P，选择 1DFFT 和本机录制目录。用一段短录制确认目录里生成了 `RadarData_1.dat` 和 `FILE_Radar_Config.ini`。将已验证的 INI 用作参考，保持现场 ONELAB 录制配置一致。
+
+从**仓库根目录**执行。先确认 `python --version` 显示 3.12。以下用 `D:\RadarLocal` 举例，按本机位置填写。录制目录要与 ONELAB 保存目录一致，实时结果目录用于保存本轮的 B/C 产物。
+
+```powershell
+python --version
+python -m venv .venv
+$python = ".\.venv\Scripts\python.exe"
+& $python -m pip install -r requirements.txt
+& $python -m pip install pywinauto==0.6.9
+
+$bRoot = ".\B_chenhenry0429_雷达与采集\dev112p_live"
+$cRoot = ".\C_cy071210_识别算法\seat-detection"
+$aRoot = ".\A_stone140_应用与业务"
+$deviceRoot = "D:\RadarLocal"
+$onelab = Join-Path $deviceRoot "onelab_control.local.json"
+$referenceIni = Join-Path $deviceRoot "recordings\替换为已验证录制目录\FILE_Radar_Config.ini"
+```
+
+在本机保存 `onelab_control.local.json`。用实际的 ONELAB EXE 路径和采集窗口标题替换示例。窗口保持打开时，下面的 `inspect` 命令会列出按钮名称和 `automation_id`。将开始、停止按钮的准确标识填入配置，也可以用 `name` 选择。若同一标识匹配多个控件，可以同时填写两项。
+
+```json
+{
+  "executable": "C:/应用目录/ONELAB.exe",
+  "window_title": "替换为实际的采集窗口标题",
+  "start": {"automation_id": "替换为录制开始按钮 ID"},
+  "stop": {"automation_id": "替换为录制停止按钮 ID"}
+}
+```
+
+```powershell
+& $python -X utf8 (Join-Path $bRoot "onelab_control.py") inspect $onelab
+
+& $python -X utf8 (Join-Path $bRoot "a_device_bridge.py") `
+  --recordings (Join-Path $deviceRoot "recordings") `
+  --output (Join-Path $deviceRoot "results") `
+  --c-root $cRoot `
+  --config (Join-Path $cRoot "config\M1_dev112p_v1.2.1.json") `
+  --device-config (Join-Path $aRoot "radar_device.local.json") `
+  --reference-ini $referenceIni `
+  --onelab-control $onelab
+
+& $python -X utf8 (Join-Path $aRoot "live_monitor.py") --port 8766
+```
+
+桥接程序生成 A 目录中的 `radar_device.local.json` 和 `dev112p_device/` 下的会话模板。已有配置时，先备份原 JSON，再用上述命令重新生成。本机配置、模板和采集结果仅保存在采集电脑。
+
+1. 打开 [本机首页](http://127.0.0.1:8766/)，在「使用者」页点「开始检测」。首次部署保持 ONELAB 已连接设备，开始录制按钮处于可用状态。省略 `--onelab-control` 时，点开始检测后需到 ONELAB 手工开录。
+2. 页面收到首个合法结果后显示「正在检测」。在「开发者监测」检查数据来源为实测、帧号从 0 连续更新，并观察空座、入座、离座与释放。默认等首帧 60 秒。超时先检查控制台、按钮匹配、保存路径和参考 INI。
+3. 点「停止检测」，确认 ONELAB 已停录并保存文件。在结果目录检查 `A_delivery.json` 中的 B 保存帧数和 A 接收帧数，再重新开始一轮，检查是否从帧 0 接收。
+
+当前 C 在线配置提供占用判断，坐姿提醒可用合成演示核对。真机占用、实际断流和停止后的资源释放需要在采集电脑现场确认。DEV112P 的帧时间按设备计数推算，页面标注「名义时间」。
+
 ## C 接入约定
 
 在采集电脑上同时运行 C 和 A。A 启动时读取一次采集与算法说明，使用仓库共享的九列校验和状态机。默认参数取自 A 目录的 `offline_config.json`。在线输入使用共享 v1 的时间约定 `seconds / recording_start`，算法能力使用 `{"presence": true, "posture": false}` 形式，具体字段见仓库根目录 `contract.py`。

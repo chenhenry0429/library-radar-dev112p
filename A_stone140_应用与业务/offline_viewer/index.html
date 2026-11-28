@@ -3,31 +3,310 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>座位与坐姿 · 离线回放 v0.2.0</title>
 <style>
-:root{--ink:#152e38;--muted:#637c86;--line:#d9e4e7;--teal:#087f78;--bg:#f1f6f6}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Microsoft YaHei",system-ui,sans-serif}header{background:#123740;color:white;padding:28px max(24px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;align-items:center;gap:20px}h1{font-size:25px;margin:3px 0;font-weight:600}header small{color:#9bc8c8;letter-spacing:2px}header p{margin:0;color:#bad1d5;font-size:13px}main{max-width:1228px;margin:auto;padding:24px}button,select,.file-button{font:inherit;border:1px solid #b9ced2;border-radius:8px;padding:9px 16px;background:white;color:var(--ink);cursor:pointer}button:hover,.file-button:hover{background:#e7f4f1}button:disabled{opacity:.5;cursor:default}.primary{background:var(--teal);color:white;border-color:var(--teal)}.primary:hover{background:#086c66}.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}.import{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.import .copy{flex:1;min-width:260px}h2{font-size:17px;margin:0 0 4px}p{margin:3px 0}.muted{color:var(--muted);font-size:13px}.badge{display:inline-block;background:#d9eee9;color:#086b5f;padding:3px 11px;border-radius:30px;font-size:12px}.badge.warn{background:#fff0ce;color:#94620c}.badge.dark{background:#28505a;color:#d8eeed}.error{color:#aa3434;background:#fff0ef;padding:10px 14px;border-radius:8px;white-space:pre-wrap;margin-top:12px}.hidden{display:none!important}.meta{display:flex;justify-content:space-between;gap:15px;align-items:center;margin:22px 0 12px}.meta strong{font-size:16px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card{background:white;border:1px solid var(--line);border-radius:12px;padding:19px}.label{font-size:13px;color:var(--muted)}.value{font-size:27px;font-weight:600;line-height:1.5;margin:8px 0}.sub{font-size:12px;color:var(--muted);min-height:20px}.status-good{color:var(--teal)}.status-warn{color:#a46a05}.layout{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}.time{font-size:36px;font-variant-numeric:tabular-nums;font-weight:600}.time small{font-size:15px;color:var(--muted);font-weight:400}.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}.scrub{width:100%;accent-color:var(--teal);margin:18px 0 6px}.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}.track{display:flex;height:24px;border-radius:6px;overflow:hidden;margin-top:20px;background:#edf1f2}.legend{display:flex;gap:12px;font-size:12px;flex-wrap:wrap;margin-top:9px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}.notice{background:#f0f7f6;border-left:3px solid var(--teal);padding:14px;margin-top:18px;min-height:80px}.notice strong{font-size:15px}.facts{display:grid;grid-template-columns:100px 1fr;gap:9px 12px;font-size:13px;margin-top:18px}.facts dt{color:var(--muted)}.facts dd{margin:0;overflow-wrap:anywhere}.table-wrap{overflow:auto;max-height:370px}table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}th{color:var(--muted);background:#f5f8f9;position:sticky;top:0}th,td{padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap}td:last-child{white-space:normal;min-width:230px}tr.future{opacity:.38}tr.selected{background:#edf7f3}tbody tr{cursor:pointer}.section-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}footer{text-align:center;color:var(--muted);font-size:12px;padding:12px 0 30px}input[type=file]{position:absolute;width:1px;height:1px;opacity:0}button:focus-visible,select:focus-visible,.file-button:focus-within{outline:3px solid #5ebcae;outline-offset:3px}@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}header{padding:22px}main{padding:16px}.meta{align-items:flex-start;flex-direction:column}}@media(max-width:430px){.cards{grid-template-columns:1fr 1fr}.value{font-size:22px}.card{padding:13px}header .badge{display:none}}
+:root {
+  color-scheme: dark;
+  font: 16px/1.55 system-ui, "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  color: #edf3ff;
+  background: #080d18;
+  --panel: #111a2b;
+  --line: #2a3952;
+  --muted: #aab9d0;
+  --free: #4df3e4;
+  --occupied: #9a91ff;
+  --waiting: #ffc46b;
+  --attention: #ff69a6;
+  --released: #7fcac7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 20% 0%, #14243b80, transparent 58%),
+    linear-gradient(#8ba8d00b 1px, transparent 1px),
+    linear-gradient(90deg, #8ba8d00b 1px, transparent 1px);
+  background-size: auto, 28px 28px, 28px 28px;
+  font-variant-numeric: tabular-nums;
+}
+header, main {
+  width: min(100%, 73rem);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 1.5rem);
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .6rem 1rem;
+  padding-block: 2rem 1rem;
+}
+header small { color: var(--free); letter-spacing: .14em; }
+h1 { font-size: clamp(1.65rem, 4vw, 2.45rem); line-height: 1.2; margin: .15rem 0 .4rem; }
+header p { color: var(--muted); font-size: .875rem; }
 .monitor-embedded > header { display: none; }
+main { padding-block: clamp(1rem, 3vw, 2rem) .35rem; }
+header + main { padding-top: 1rem; }
+
+h2 { margin: 0; font-size: 1rem; letter-spacing: .09em; overflow-wrap: anywhere; }
+p { margin: .2rem 0; overflow-wrap: anywhere; }
+.muted, .sub, .label, .ticks, footer { color: var(--muted); font-size: .825rem; }
+.hidden, [hidden] { display: none !important; }
+
+.panel, .card {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  padding: clamp(.95rem, 2.2vw, 1.35rem);
+  background: var(--line);
+  clip-path: polygon(0 0, calc(100% - .65rem) 0, 100% .65rem,
+    100% 100%, .65rem 100%, 0 calc(100% - .65rem));
+}
+.panel::before, .card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  clip-path: inherit;
+  background: var(--panel);
+  pointer-events: none;
+}
+.panel, .cards { margin-bottom: 1rem; }
+.import { display: flex; gap: .7rem; align-items: center; flex-wrap: wrap; }
+.import .copy { flex: 1 1 18rem; min-width: 0; }
+.import-actions, .scenario-controls, .controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+.scenario-controls { margin-top: .85rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+.scenario-controls button { font-size: .825rem; }
+
+button, select, .file-button {
+  min-height: 2.5rem;
+  max-width: 100%;
+  padding: .35rem .7rem;
+  border: 1px solid #354762;
+  border-radius: .2rem;
+  background: #0e1727;
+  color: #edf3ff;
+  font: inherit;
+  cursor: pointer;
+}
+.file-button { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+#files { position: absolute; inset: 0 auto auto 0; width: 1px; height: 1px; opacity: 0; }
+button:hover:not(:disabled), .file-button:hover { border-color: #6881a5; background: #1a2a42; }
+button:disabled { background: #172437; color: #a6b6ca; cursor: default; }
+.primary {
+  background: var(--free);
+  color: #082025;
+  border-color: var(--free);
+  box-shadow: 0 0 .85rem #4df3e42c;
+  font-weight: 700;
+}
+.primary:hover:not(:disabled) { background: #a3fff6; border-color: #a3fff6; }
+:focus-visible, .file-button:focus-within { outline: 2px solid #edf3ff; outline-offset: 3px; }
+
+.badge {
+  display: inline-block;
+  padding: .22rem .55rem;
+  border: 1px solid #354762;
+  background: #101d30;
+  color: #d3def1;
+  font-size: .78rem;
+  overflow-wrap: anywhere;
+}
+.badge.warn, .error { color: var(--waiting); border-color: #785e40; }
+.error { margin-top: .8rem; padding: .7rem; border: 1px solid #785e40; background: #30271e; white-space: pre-wrap; }
+.meta, .section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: .55rem 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.meta { margin: 1.15rem 0 .75rem; }
+.meta strong { overflow-wrap: anywhere; }
+.meta > div { display: flex; gap: .35rem; flex-wrap: wrap; }
+.section-head { margin-bottom: .75rem; }
+
+.layout, .cards { display: grid; gap: 1rem; }
+.layout { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); }
+.cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.value { margin: .35rem 0; font-size: clamp(1.25rem, 3vw, 1.65rem); font-weight: 650; line-height: 1.25; }
+.value, .sub { overflow-wrap: anywhere; }
+[data-tone="unknown"], [data-tone="leave_wait"], [data-tone="warning"] { --tone: var(--waiting); }
+[data-tone="idle"], [data-tone="released"] { --tone: var(--free); }
+[data-tone="in_use"] { --tone: var(--occupied); }
+[data-tone="reminder"] { --tone: var(--attention); }
+.value, .seat-tile, #remaining, #noticeTitle, .event-name { color: var(--tone, #edf3ff); }
+
+.time { font-size: clamp(1.8rem, 5vw, 2.75rem); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.time small { font-size: .875rem; color: var(--muted); font-weight: 400; }
+.controls { margin-top: .85rem; }
+#play { min-width: 5rem; }
+.scrub { display: block; width: 100%; height: 2.75rem; accent-color: var(--free); margin: .55rem 0 0; cursor: pointer; }
+.ticks { display: flex; justify-content: space-between; gap: .4rem; }
+.track-shell { position: relative; margin: 1rem .35rem 0; }
+.track {
+  position: relative;
+  display: flex;
+  height: 1rem;
+  border-block: 1px solid #354762;
+  background: #25344c;
+}
+.track > div { min-width: 0; }
+.track > [data-tone="unknown"], .legend .dot[data-tone="unknown"] {
+  background: repeating-linear-gradient(135deg, #866340 0 2px, #352a25 2px 4px);
+}
+.track-marker, .playhead { position: absolute; transform: translateX(-50%); }
+.track-marker {
+  inset-block: -.28rem auto;
+  width: .55rem;
+  height: .55rem;
+  border: 1px solid #111a2b;
+  background: var(--attention);
+  rotate: 45deg;
+}
+.playhead {
+  inset-block: -.17rem;
+  width: 2px;
+  z-index: 1;
+  background: #edf3ff;
+  box-shadow: 0 0 0 1px #080d18;
+  pointer-events: none;
+}
+.legend { display: flex; gap: .4rem .85rem; flex-wrap: wrap; margin-top: .65rem; color: var(--muted); font-size: .8rem; }
+.legend > span { display: inline-flex; align-items: center; gap: .36rem; }
+.dot { width: .45rem; height: .45rem; background: var(--swatch); transform: rotate(45deg); }
+.legend .dot[data-tone="released"] { --swatch: var(--released); }
+.legend .dot { --swatch: var(--tone); }
+.playback-note { margin-top: .75rem; }
+
+.notice {
+  margin-top: .8rem;
+  padding: .65rem .75rem;
+  border-inline-start: 2px solid var(--tone, #526987);
+  background: color-mix(in srgb, var(--tone, #617da4) 9%, #0d1626);
+}
+.notice:has(#noticeTitle[data-tone="reminder"]) { --tone: var(--attention); }
+.notice:has(#noticeTitle[data-tone="warning"]) { --tone: var(--waiting); }
+.facts { display: grid; grid-template-columns: minmax(0, 6rem) minmax(0, 1fr); gap: .45rem .65rem; font-size: .85rem; margin: .8rem 0 0; }
+.facts dt, #events td:first-child { color: var(--muted); }
+.facts dd, .facts dt { margin: 0; overflow-wrap: anywhere; }
+
+.table-wrap { max-height: 27rem; overflow: auto; }
+table { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; font-size: .875rem; text-align: left; }
+th { position: sticky; top: 0; background: #172337; color: var(--muted); z-index: 1; }
+thead th:first-child { width: 6.5rem; }
+thead th:nth-child(2) { width: 20%; }
+thead th:nth-child(3) { width: 24%; }
+th, td { padding: .62rem .7rem; border-bottom: 1px solid #28364d; overflow-wrap: anywhere; }
+td:last-child { color: #ccdaee; }
+tbody tr { cursor: pointer; }
+tbody tr:nth-child(odd) { background: #0e1727; }
+tbody tr.future { opacity: .72; }
+tbody tr:hover, tbody tr.selected { background: #183044; }
+tbody tr.selected td:first-child { box-shadow: inset 2px 0 var(--tone, var(--free)); }
+tbody tr:focus-visible { outline-offset: -2px; }
+.event-name { font-weight: 650; }
+
+.seat-overview { display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); gap: 1rem; }
+.seat-tile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .7rem;
+  padding: .8rem;
+  border: 1px solid color-mix(in srgb, var(--tone, var(--muted)) 40%, var(--line));
+  background: color-mix(in srgb, var(--tone, var(--muted)) 8%, #0e1727);
+}
+.seat-symbol {
+  position: relative;
+  width: 2.2rem;
+  height: 1.55rem;
+  margin: 0 .2rem .35rem 0;
+  border: 1px solid currentColor;
+  border-bottom-width: .32rem;
+  border-radius: .35rem .35rem .15rem .15rem;
+}
+.seat-symbol::after { content: ""; position: absolute; inset: 100% .12rem auto; height: .35rem; border-inline: 1px solid currentColor; }
+.seat-name { font-weight: 650; overflow-wrap: anywhere; }
+.seat-summary { display: flex; gap: .45rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.seat-summary > span { padding: .35rem .55rem; background: #0e1727; border: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+.seat-summary b { color: #edf3ff; }
+.alert-item { padding: .6rem .75rem; margin: .5rem 0; border-inline-start: 2px solid #9d774a; background: #292318; color: var(--waiting); }
+.alert-item.info { border-color: #526987; background: #0e1727; color: #cbd8ec; }
+.alert-item p { font-size: .875rem; }
+details { margin-top: .75rem; padding-top: .6rem; border-top: 1px solid var(--line); }
+summary { color: var(--muted); cursor: pointer; width: fit-content; }
+summary:hover { color: #edf3ff; }
+.scope-note { white-space: pre-line; font-size: .875rem; }
+.history-list { max-height: 12rem; overflow: auto; }
+.history-list button { display: block; width: 100%; text-align: left; margin-top: .4rem; overflow-wrap: anywhere; }
+.history-list button:focus-visible { outline-offset: -2px; }
+.config-note { font: .8rem/1.6 ui-monospace, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
+footer { text-align: center; padding: 0 1rem 1.25rem; }
+
+@media (max-width: 730px) {
+  .layout, .seat-overview { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .seat-overview { gap: .75rem; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  button, select, .file-button { min-height: 2.75rem; }
+}
+
+@media (max-width: 540px) {
+  .import-actions { width: 100%; }
+  .import-actions > * { flex: 1 1 7rem; }
+  table, tbody { display: block; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: .48rem .58rem; border-bottom: 1px solid #28364d; }
+  td { padding: .1rem 0; border: 0; }
+  td:nth-child(3), td:last-child { grid-column: 1 / -1; }
+  tbody tr.selected { box-shadow: inset 2px 0 var(--tone, var(--free)); }
+  tbody tr.selected td:first-child { box-shadow: none; }
+}
 </style>
 <header><div><small>RADAR / OFFLINE LAB</small><h1>座位占用与坐姿回放</h1><p>读取 A 端运行结果，按采集时间查看状态与事件</p></div><span class="badge dark">本地离线 · 文件不上传</span></header>
 <main>
- <section class="panel"><div class="import"><div class="copy"><h2>打开一次运行结果</h2><p class="muted">同时选择同一输出目录中的 timeline.csv、events.csv、run.json。</p></div><button id="demo">载入模拟演示</button><label class="file-button primary" tabindex="0">选择结果文件<input id="files" type="file" multiple accept=".csv,.json"></label></div><div id="error" role="alert" class="error hidden"></div></section>
+ <section id="import-panel" class="panel">
+  <div class="import">
+   <div class="copy"><h2>打开一次运行结果</h2><p class="muted">同时选择同一输出目录中的 timeline.csv、events.csv、run.json。</p></div>
+   <div class="import-actions">
+    <label class="file-button primary">选择结果文件<input id="files" type="file" multiple accept=".csv,.json"></label>
+    <button id="demo">载入模拟演示</button>
+   </div>
+  </div>
+  <div id="error" role="alert" class="error hidden"></div>
+ </section>
  <div id="empty" class="panel"><h2>从模拟演示开始</h2><p class="muted">点击“载入模拟演示”，或导入你刚刚运行得到的三个文件。此页面只回放已有结果，不重新运行算法。</p></div>
  <div id="workspace" class="hidden">
   <div class="meta"><strong id="recording"></strong><div><span id="source" class="badge"></span> <span id="ended" class="badge"></span></div></div>
+  <div class="layout">
+   <section class="panel"><div class="section-head"><h2>时间回放</h2><span id="frame" class="muted"></span></div><div class="time"><span id="time">0.0</span> <small>秒 / <span id="duration"></span> 秒</small></div>
+    <div class="controls"><button id="play" class="primary">播放</button><button id="restart">回到开始</button><label class="muted">速度 <select id="speed" aria-label="回放速度"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option></select></label><button id="next">下一事件 →</button></div>
+    <input id="scrub" class="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="数据时间"><div class="ticks"><span id="startTime"></span><span id="endTime"></span></div>
+    <div class="track-shell"><div id="track" class="track" role="img" aria-label="占用状态时间带"></div><div id="playhead" class="playhead" aria-hidden="true"></div></div>
+    <div class="legend">
+     <span><i class="dot" data-tone="unknown"></i>未知</span>
+     <span><i class="dot" data-tone="idle"></i>空闲</span>
+     <span><i class="dot" data-tone="in_use"></i>使用中</span>
+     <span><i class="dot" data-tone="leave_wait"></i>离座等待</span>
+     <span><i class="dot" data-tone="released"></i>已释放</span>
+     <span><i class="dot" data-tone="reminder"></i>姿态提醒</span>
+    </div>
+    <p class="muted playback-note">倍速只改变显示速度。计时和事件均读取原始输出，不重新计算。</p>
+   </section>
+   <section class="panel"><h2>当前记录</h2><div class="notice" aria-live="polite"><strong id="noticeTitle"></strong><p id="noticeBody" class="muted"></p></div><dl class="facts"><dt>座位</dt><dd id="seat"></dd><dt>占用会话</dt><dd id="session"></dd><dt>姿态累计</dt><dd id="elapsed"></dd><dt>释放剩余</dt><dd id="remaining"></dd><dt>算法版本</dt><dd id="algorithm"></dd><dt>参数版本</dt><dd id="parameters"></dd><dt>原始帧对齐</dt><dd id="alignment"></dd></dl></section>
+  </div>
   <div class="cards">
    <div class="card"><div class="label">座位占用</div><div id="occupancy" class="value"></div><div id="occupancySub" class="sub"></div></div>
    <div class="card"><div class="label">坐姿状态</div><div id="posture" class="value"></div><div id="postureSub" class="sub"></div></div>
    <div class="card"><div class="label">个人标定</div><div id="calibration" class="value"></div><div class="sub">以 A 端实际允许使用的参考为准</div></div>
    <div class="card"><div class="label">提醒状态</div><div id="reminder" class="value"></div><div id="reminderSub" class="sub"></div></div>
   </div>
-  <div class="layout">
-   <section class="panel"><div class="section-head"><h2>时间回放</h2><span id="frame" class="muted"></span></div><div class="time"><span id="time">0.0</span> <small>秒 / <span id="duration"></span> 秒</small></div>
-    <input id="scrub" class="scrub" type="range" min="0" max="1" step="0.01" value="0" aria-label="数据时间"><div class="ticks"><span id="startTime"></span><span id="endTime"></span></div>
-    <div class="controls"><button id="play" class="primary">播放</button><button id="restart">回到开始</button><label class="muted">速度 <select id="speed" aria-label="回放速度"><option value="1">1×</option><option value="2">2×</option><option value="5">5×</option><option value="10" selected>10×</option></select></label><button id="next">下一事件 →</button></div>
-    <div id="track" class="track" aria-label="占用状态时间带"></div><div class="legend"><span><i class="dot" style="background:#bdced5"></i>未知</span><span><i class="dot" style="background:#b9ddd6"></i>空闲</span><span><i class="dot" style="background:#168b80"></i>使用中</span><span><i class="dot" style="background:#e6b352"></i>离座等待</span><span><i class="dot" style="background:#6fadb6"></i>已释放</span></div>
-    <p class="muted" style="margin-top:15px">倍速只改变显示速度。计时和事件均读取原始输出，不重新计算。</p>
-   </section>
-   <section class="panel"><h2>当前记录</h2><div class="notice" aria-live="polite"><strong id="noticeTitle"></strong><p id="noticeBody" class="muted"></p></div><dl class="facts"><dt>座位</dt><dd id="seat"></dd><dt>占用会话</dt><dd id="session"></dd><dt>姿态累计</dt><dd id="elapsed"></dd><dt>释放剩余</dt><dd id="remaining"></dd><dt>算法版本</dt><dd id="algorithm"></dd><dt>参数版本</dt><dd id="parameters"></dd><dt>原始帧对齐</dt><dd id="alignment"></dd></dl></section>
-  </div>
-  <section class="panel"><div class="section-head"><div><h2>事件记录</h2><p class="muted">点击任一行跳转。浅色行表示回放尚未到达的事件。</p></div><span id="eventCount" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>时间 / 秒</th><th>事件</th><th>状态变化</th><th>原因</th></tr></thead><tbody id="events"></tbody></table></div></section>
+  <section class="panel history"><div class="section-head"><div><h2>事件记录</h2><p class="muted">点击任一行跳转。浅色行表示回放尚未到达的事件。</p></div><span id="eventCount" class="muted"></span></div><div class="table-wrap"><table role="table"><thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">时间 / 秒</th><th role="columnheader" scope="col">事件</th><th role="columnheader" scope="col">状态变化</th><th role="columnheader" scope="col">原因</th></tr></thead><tbody id="events" role="rowgroup"></tbody></table></div></section>
  </div>
 </main><footer>DEV112P 项目 · A 端离线查看器 v0.2.0 · 模拟数据用于业务验证，不能代表雷达识别性能</footer>
 <script src="demo-data.js"></script>
@@ -37,12 +316,22 @@
 const $=id=>document.getElementById(id);
 const names={unknown:'未知',idle:'空闲',in_use:'使用中',leave_wait:'离座等待',released:'已释放',reference:'参考范围',forward:'明显前倾',backward:'明显后靠',not_applicable:'不适用',uncalibrated:'未标定',calibrating:'标定中',valid:'有效',invalid:'已失效',accumulating:'累计中',reminded:'已提醒',cooldown:'冷却中',paused:'已暂停'};
 const eventNames={occupancy_change:'占用变化',posture_change:'姿态变化',reminder:'姿态提醒',calibration_required:'需要标定',data_gap:'数据缺口',review_required:'人工复核'};
-const colors={unknown:'#bdced5',idle:'#b9ddd6',in_use:'#168b80',leave_wait:'#e6b352',released:'#6fadb6'};
+const colors={unknown:'var(--waiting)',idle:'var(--free)',in_use:'var(--occupied)',leave_wait:'var(--waiting)',released:'var(--released)'};
 const timelineFields='frame_id timestamp seat_id session_id occupancy_state occupancy_pending posture_state calibration_status posture_elapsed_s release_remaining_s reminder_state review_required'.split(' ');
 const eventFields='timestamp frame_id seat_id session_id event_type from_state to_state reason'.split(' ');
 let data=null,index=0,clock=0,playing=false,lastWall=0,animation=0;
 function label(s){return names[s]||s||'—'}
 function text(id,s){$(id).textContent=s}
+function tone(id,value){$(id).setAttribute('data-tone',value)}
+function eventTone(event){
+ if(event.event_type==='reminder')return 'reminder';
+ if(event.event_type==='occupancy_change')return event.to_state;
+ return ['calibration_required','data_gap','review_required'].includes(event.event_type)?'warning':'';
+}
+function trackPosition(timestamp){
+ const start=data.timeline[0].timestamp, duration=data.run.end_timestamp-start;
+ return (duration>0?(timestamp-start)/duration*100:0)+'%';
+}
 function fail(e){text('error',e.message||String(e));$('error').classList.remove('hidden')}
 function clearError(){$('error').classList.add('hidden')}
 function csv(textValue,fields,name){
@@ -81,12 +370,56 @@ function load(bundle){const next=validate(bundle);pause();data=next;clock=data.t
  text('recording',data.run.recording_id);text('source',data.run.source_kind==='synthetic'?'模拟数据':'实测数据');$('source').className='badge'+(data.run.source_kind==='synthetic'?' warn':'');text('ended',data.run.session_complete?'文件结束：无未结束会话':'文件结束：会话未完成');
  $('scrub').min=clock;$('scrub').max=data.run.end_timestamp;text('duration',data.run.end_timestamp.toFixed(1));text('startTime',clock.toFixed(1)+' s');text('endTime',data.run.end_timestamp.toFixed(1)+' s');
  text('algorithm',data.run.algorithm_version||'—');text('parameters',data.run.parameter_version||'—');text('alignment',data.run.raw_alignment_checked?'已检查 NPZ 与结果对齐':'本次未检查 NPZ 对齐');text('eventCount',data.events.length+' 条事件');
- const body=$('events');body.replaceChildren();data.events.forEach(e=>{let tr=document.createElement('tr');tr.tabIndex=0;for(const value of [e.timestamp.toFixed(1),eventNames[e.event_type],e.from_state||e.to_state?[label(e.from_state),label(e.to_state)].join(' → '):'—',e.reason]){let td=document.createElement('td');td.textContent=value;tr.append(td)}tr.onclick=()=>{pause();seek(e.timestamp)};tr.onkeydown=k=>{if(k.key==='Enter'){pause();seek(e.timestamp)}};body.append(tr)});
- const track=$('track');track.replaceChildren();let groups=[];for(let i=0;i<data.timeline.length-1;i++){const r=data.timeline[i],span=data.timeline[i+1].timestamp-r.timestamp;let last=groups.at(-1);if(last&&last.state===r.occupancy_state)last.duration+=span;else groups.push({state:r.occupancy_state,duration:span})}groups.forEach(g=>{let s=document.createElement('div');s.style.flex=String(g.duration);s.style.background=colors[g.state];s.title=label(g.state)+' · '+g.duration.toFixed(1)+' 秒';track.append(s)});seek(clock);
+ const body=$('events');body.replaceChildren();
+ for(const event of data.events){
+  const row=document.createElement('tr');
+  row.tabIndex=0;
+  row.setAttribute('role','row');
+  row.setAttribute('data-tone',eventTone(event));
+  const transition=event.from_state||event.to_state?[label(event.from_state),label(event.to_state)].join(' → '):'—';
+  const values=[event.timestamp.toFixed(1),eventNames[event.event_type],transition,event.reason];
+  values.forEach((value,column)=>{
+   const cell=document.createElement('td');
+   cell.setAttribute('role','cell');
+   if(column===1)cell.className='event-name';
+   cell.textContent=value;
+   row.append(cell);
+  });
+  row.onclick=()=>{pause();seek(event.timestamp)};
+  row.onkeydown=key=>{if(key.key==='Enter')row.onclick()};
+  body.append(row);
+ }
+ const track=$('track');track.replaceChildren();
+ const groups=[];
+ for(let i=0;i<data.timeline.length-1;i++){
+  const record=data.timeline[i],duration=data.timeline[i+1].timestamp-record.timestamp;
+  const previous=groups.at(-1);
+  if(previous?.state===record.occupancy_state)previous.duration+=duration;
+  else groups.push({state:record.occupancy_state,duration});
+ }
+ for(const group of groups){
+  const segment=document.createElement('div');
+  segment.style.flex=String(group.duration);
+  segment.style.backgroundColor=colors[group.state];
+  segment.setAttribute('data-tone',group.state);
+  segment.title=label(group.state)+' · '+group.duration.toFixed(1)+' 秒';
+  track.append(segment);
+ }
+ for(const event of data.events){
+  if(event.event_type!=='reminder')continue;
+  const marker=document.createElement('span');
+  marker.className='track-marker';
+  marker.style.left=trackPosition(event.timestamp);
+  marker.title=eventNames[event.event_type]+' · '+event.timestamp.toFixed(1)+' 秒';
+  marker.setAttribute('aria-hidden','true');
+  track.append(marker);
+ }
+ seek(clock);
 }
 function seek(t){clock=Math.max(data.timeline[0].timestamp,Math.min(t,data.run.end_timestamp));let lo=0,hi=data.timeline.length-1;while(lo<hi){let mid=Math.ceil((lo+hi)/2);if(data.timeline[mid].timestamp<=clock)lo=mid;else hi=mid-1}index=lo;render()}
-function render(){const r=data.timeline[index];text('time',clock.toFixed(1));$('scrub').value=clock;text('frame','第 '+(index+1)+' / '+data.timeline.length+' 帧');text('occupancy',label(r.occupancy_state));$('occupancy').className='value '+(r.occupancy_pending||r.review_required?'status-warn':'status-good');text('occupancySub',r.review_required?'需人工复核，不计入可用空位':r.occupancy_pending?'待确认，不计入可用空位':'占用证据已确认');text('posture',label(r.posture_state));text('postureSub',r.calibration_status==='valid'?'使用有效个人参考':'尚不能启用个人姿态提醒');text('calibration',label(r.calibration_status));text('reminder',r.reminder_state==='idle'?'未计时':label(r.reminder_state));text('reminderSub',r.reminder_state==='paused'?'证据或标定条件不足':'仅展示已有提醒事件，不播放声音');text('seat',r.seat_id);text('session',r.session_id||'无活动会话');text('elapsed',r.posture_elapsed_s===''?'不适用':Number(r.posture_elapsed_s).toFixed(1)+' 秒');text('remaining',r.release_remaining_s===''?'不适用':Number(r.release_remaining_s).toFixed(1)+' 秒');
+function render(){const r=data.timeline[index];text('time',clock.toFixed(1));$('scrub').value=clock;$('playhead').style.left=trackPosition(clock);text('frame','第 '+(index+1)+' / '+data.timeline.length+' 帧');text('occupancy',label(r.occupancy_state));text('occupancySub',r.review_required?'需人工复核，不计入可用空位':r.occupancy_pending?'待确认，不计入可用空位':'占用证据已确认');text('posture',label(r.posture_state));text('postureSub',r.calibration_status==='valid'?'使用有效个人参考':'尚不能启用个人姿态提醒');text('calibration',label(r.calibration_status));text('reminder',r.reminder_state==='idle'?'未计时':label(r.reminder_state));text('reminderSub',r.reminder_state==='paused'?'证据或标定条件不足':'仅展示已有提醒事件，不播放声音');text('seat',r.seat_id);text('session',r.session_id||'无活动会话');text('elapsed',r.posture_elapsed_s===''?'不适用':Number(r.posture_elapsed_s).toFixed(1)+' 秒');text('remaining',r.release_remaining_s===''?'不适用':Number(r.release_remaining_s).toFixed(1)+' 秒');
  const arrived=data.events.filter(e=>e.timestamp<=clock),latest=arrived.at(-1);text('noticeTitle',r.review_required?'当前需要人工复核':r.occupancy_pending?'当前证据待确认':latest?eventNames[latest.event_type]:'尚无事件');text('noticeBody',latest?latest.timestamp.toFixed(1)+' 秒 · '+latest.reason:'继续播放，查看占用确认和提醒事件。');
+ tone('noticeTitle',r.review_required||r.occupancy_pending?'warning':latest?eventTone(latest):'');
  [...$('events').children].forEach((tr,i)=>{tr.className=data.events[i].timestamp>clock?'future':latest===data.events[i]?'selected':''});$('next').disabled=!data.events.some(e=>e.timestamp>clock);if(clock>=data.run.end_timestamp)pause();
 }
 function tick(wall){if(!playing)return;const dt=(wall-lastWall)/1000;lastWall=wall;seek(clock+dt*Number($('speed').value));if(playing)animation=requestAnimationFrame(tick)}

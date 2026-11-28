@@ -1,16 +1,14 @@
 /* 显示层只读取既有状态；不修改业务阈值、时间线或事件。 */
 'use strict';
-const extraStyle=document.createElement('style');
-extraStyle.textContent=`.seat-overview{display:grid;grid-template-columns:240px 1fr;gap:24px}.seat-tile{border:2px solid #b9ced2;border-radius:14px;padding:20px;text-align:center;background:#f6faf9}.seat-symbol{margin:12px auto;width:80px;height:65px;border:7px solid currentColor;border-radius:15px 15px 6px 6px;border-bottom-width:16px}.seat-symbol:after{content:'';display:block;width:58px;height:18px;margin:49px auto 0;border-left:6px solid currentColor;border-right:6px solid currentColor}.seat-name{font-size:24px;font-weight:600;overflow-wrap:anywhere}.seat-summary{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.seat-summary>span{background:#f1f6f6;padding:8px 14px;border-radius:8px}.alert-item{padding:12px 15px;border-radius:8px;margin:9px 0;background:#fff4db;border-left:4px solid #bb7b0c}.alert-item.danger{background:#fff0ef;border-color:#b44940}.alert-item.info{background:#edf5f8;border-color:#5b869a}.alert-item strong{display:block}.alert-item p{font-size:13px}.scenario-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.scope-note{white-space:pre-line;font-size:13px}.history-list{max-height:180px;overflow:auto}.history-list button{display:block;width:100%;text-align:left;margin:5px 0;padding:8px 12px}.config-note{font:12px/1.7 monospace;overflow-wrap:anywhere;white-space:pre-wrap}body .event-filter{padding:6px 10px}@media(max-width:650px){.seat-overview{grid-template-columns:1fr}.seat-tile{display:flex;gap:20px;align-items:center;text-align:left}.seat-symbol{display:none}}`;
-document.head.append(extraStyle);
 const seatPanel=document.createElement('section');seatPanel.className='panel';
 seatPanel.innerHTML=`<div class="section-head"><h2>座位概览</h2><span class="badge">单座位 · 离线记录</span></div><div class="seat-overview"><div id="seatTile" class="seat-tile"><div><div id="seatName" class="seat-name"></div><div class="seat-symbol" aria-hidden="true"></div></div><div><strong id="seatState"></strong><p id="seatAvailability" class="muted"></p></div></div><div><div class="seat-summary"><span>总座位 <b>1</b></span><span>本时刻可用 <b id="availableCount">0</b></span><span>待确认 / 复核 <b id="pendingCount">0</b></span></div><p id="scopeNote" class="scope-note"></p><p id="recordStatus" class="muted"></p></div></div>`;
-$('workspace').insertBefore(seatPanel,$('workspace').querySelector('.cards'));
+const historyPanel=$('workspace').querySelector('.history');
+$('workspace').insertBefore(seatPanel,historyPanel);
 const anomalyPanel=document.createElement('section');anomalyPanel.className='panel';
 anomalyPanel.innerHTML=`<div class="section-head"><h2>异常与能力提示</h2><button id="nextAnomaly">下一异常 →</button></div><div id="activeAlerts" role="status" aria-live="polite"></div><details><summary>已到达的异常记录 <span id="anomalyCount"></span></summary><div id="anomalyHistory" class="history-list"></div></details><details><summary>本次固定参数 / 已知问题</summary><pre id="fixedConfig" class="config-note"></pre><p id="knownIssues" class="scope-note"></p></details>`;
-$('workspace').insertBefore(anomalyPanel,seatPanel.nextSibling);
+$('workspace').insertBefore(anomalyPanel,historyPanel);
 const scenarios=document.createElement('div');scenarios.className='scenario-controls';scenarios.innerHTML=`<span class="muted">验收场景：</span><button id="scenarioNormal">正常占用与提醒</button><button id="scenarioAnomalies">未知 / 复核 / 数据缺口</button><button id="scenarioEof">等待中结束文件</button>`;
-$('files').parentElement.parentElement.parentElement.append(scenarios);
+$('import-panel').append(scenarios);
 const filter=document.createElement('select');filter.id='eventFilter';filter.className='event-filter';filter.setAttribute('aria-label','筛选事件');filter.innerHTML='<option value="all">全部事件</option><option value="anomaly">仅异常</option><option value="reminder">仅提醒</option>';
 $('eventCount').parentElement.append(filter);filter.onchange=()=>{if(data)render()};
 const anomalyTypes=new Set(['data_gap','review_required']);
@@ -48,7 +46,11 @@ render=function(){
  originalRender();const v=viewState(),{r,gap,pending,available,postureSupported}=v;
  text('seatName',r.seat_id);text('seatState',pending?'待确认 · '+label(r.occupancy_state):label(r.occupancy_state));
  text('seatAvailability',available?'该记录时刻可用':pending?'不可计入可用空位':r.occupancy_state==='leave_wait'?'会话保留，等待释放':'当前不可用');
- $('seatTile').style.borderColor=pending?'#bb7b0c':colors[r.occupancy_state];$('seatTile').style.color=pending?'#99620b':'#12655e';
+ const seatTone=pending?'warning':r.occupancy_state;
+ tone('seatTile',seatTone);
+ tone('occupancy',seatTone);
+ tone('reminder',!gap&&postureSupported!==false&&r.reminder_state==='reminded'?'reminder':'');
+ tone('remaining',r.release_remaining_s!==''?'warning':'');
  text('availableCount',available?'1':'0');text('pendingCount',pending?'1':'0');
  const nominal=data.run.time_base?.source==='nominal_frame_period';
  const baseline=String(data.run.result_provenance?.type||data.run.algorithm_version||'').toLowerCase().includes('baseline');
@@ -62,7 +64,7 @@ render=function(){
  history.forEach(e=>{const b=document.createElement('button');b.textContent=e.timestamp.toFixed(4)+' 秒 · '+e.title+' · '+e.reason;b.onclick=()=>{pause();seek(e.timestamp)};list.append(b)});
  $('nextAnomaly').disabled=!records.some(e=>e.timestamp>clock);
  const selected=$('eventFilter').value;[...$('events').children].forEach((tr,i)=>{const e=data.events[i];tr.hidden=selected==='anomaly'?!isAnomaly(e):selected==='reminder'?e.event_type!=='reminder':false});
- if(gap){text('occupancySub','数据缺口，保留最后确认状态');text('posture','未知');text('reminder','已暂停');text('reminderSub','当前时间没有新帧，计时保持最后记录值');text('remaining',r.release_remaining_s===''?'不适用':r.release_remaining_s+' 秒（暂停）');text('noticeTitle','数据缺口');text('noticeBody','当前回放时间缺少记录；不会将空白区间当作无人。')}
+ if(gap){text('occupancySub','数据缺口，保留最后确认状态');text('posture','未知');text('reminder','已暂停');text('reminderSub','当前时间没有新帧，计时保持最后记录值');text('remaining',r.release_remaining_s===''?'不适用':r.release_remaining_s+' 秒（暂停）');text('noticeTitle','数据缺口');tone('noticeTitle','warning');text('noticeBody','当前回放时间缺少记录；不会将空白区间当作无人。')}
  if(postureSupported===false){text('postureSub','此版本不支持坐姿识别');text('reminder','未启用');text('reminderSub','当前算法仅提供占用结果');text('calibration','不适用')}
 };
 $('nextAnomaly').onclick=()=>{pause();const e=anomalyRecords().find(e=>e.timestamp>clock);if(e)seek(e.timestamp)};

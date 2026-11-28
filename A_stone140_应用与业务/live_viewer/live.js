@@ -75,14 +75,20 @@ function renderEvents(entries) {
     const item = document.createElement("li");
     const time = document.createElement("time");
     time.textContent = event.timestamp.toFixed(3) + " 秒";
-    if (warnings.has(event.event_type)) item.dataset.tone = "attention";
+    if (event.event_type === "reminder") item.dataset.tone = "reminder";
+    else if (warnings.has(event.event_type)) item.dataset.tone = "attention";
+    else if (event.event_type === "occupancy_change") item.dataset.tone = event.to_state;
     let description = eventLabels[event.event_type] ?? event.event_type;
     if (event.event_type === "calibration_change") description += " · " + calibration[event.to_state];
     const states = event.event_type === "occupancy_change" ? occupancy : event.event_type === "posture_change" ? posture : null;
     if (states?.[event.from_state] && states?.[event.to_state]) {
       description += " · " + states[event.from_state] + " → " + states[event.to_state];
     }
-    item.append(time, description + " · " + event.reason);
+    const detail = document.createElement("span");
+    const title = document.createElement("strong");
+    title.textContent = description;
+    detail.append(title, " · " + event.reason);
+    item.append(time, detail);
     return item;
   });
 }
@@ -100,6 +106,7 @@ function render(snapshot) {
   const paused = pending && !ended;
   const evidence = active ? snapshot.evidence : null;
   setText("connection", phases[phase]);
+  element("connection").dataset.phase = phase;
   if (snapshot?.mode) {
     const origin = snapshot.source_kind === "synthetic" ? "合成数据" : "实测数据";
     const mode = snapshot.mode === "replay" ? "逐帧回放" : "在线接收";
@@ -113,13 +120,15 @@ function render(snapshot) {
     pending ? "待确认 · 不可用" : available ? "可用" : "不可用");
   setText("available-count", available ? "1" : "0");
   setText("pending-count", pending && !ended ? "1" : "0");
-  element("seatPanel").dataset.tone = ended ? "history" : pending || state?.occupancy_state === "leave_wait" ? "attention" : "ready";
+  element("seatPanel").dataset.tone = ended ? "history" : pending ? "attention" : state.occupancy_state;
   setText("posture", poseSupported === false ? "未提供" : state ? (paused ? "未知" : posture[state.posture_state]) : "—");
   setText("calibration", poseSupported === false ? "不适用" : state ? calibration[state.calibration_status] : "—");
   setText("reminder", poseSupported === false ? "未启用" : state ? (paused ? "已暂停" : reminders[state.reminder_state]) : "—");
+  element("reminder").dataset.tone = !paused && poseSupported !== false && state?.reminder_state === "reminded" ? "reminder" : "";
   const frozen = ended ? "（结束）" : pending ? "（暂停）" : "";
   setText("elapsed", poseSupported === false || state?.posture_elapsed_s === "" ? "—" : seconds(state?.posture_elapsed_s, frozen));
   setText("remaining", seconds(state?.release_remaining_s, frozen));
+  element("remaining").dataset.tone = typeof state?.release_remaining_s === "number" ? "attention" : "";
   setText("session", state?.session_id || "—");
   setText("frame", state ? "#" + state.frame_id + " · " + state.timestamp.toFixed(3) + " 秒" : "—");
   setText("age", phase === "offline" || ended ? "—" : seconds(snapshot?.last_frame_age_s));

@@ -10,10 +10,16 @@
 <body>
   <header><div><h1>座位监测</h1><p id="source">正在连接 A 端服务</p></div><span id="connection" role="status">连接中</span></header>
   <main>
-    <section class="panel attention" aria-labelledby="feedback-title">
-      <h2 id="feedback-title">当前反馈</h2>
-      <ul id="alerts" aria-live="polite"><li>正在连接监测服务</li></ul>
-    </section>
+    <div class="monitor-priority">
+      <section class="panel attention" aria-labelledby="feedback-title">
+        <h2 id="feedback-title">当前反馈</h2>
+        <ul id="alerts" aria-live="polite"><li>正在连接监测服务</li></ul>
+      </section>
+      <dl class="panel freshness">
+        <div><dt>距上次收帧</dt><dd id="age">—</dd></div>
+        <div><dt>最近一帧</dt><dd id="frame">—</dd></div>
+      </dl>
+    </div>
     <section class="overview" aria-label="座位概览">
       <div class="panel seat" id="seatPanel">
         <div class="caption" id="seat">座位</div>
@@ -37,8 +43,6 @@
     <section class="panel evidence" aria-labelledby="evidence-title">
       <h2 id="evidence-title">接收与识别证据</h2>
       <dl class="signal-grid">
-        <div><dt>最近一帧</dt><dd id="frame">—</dd></div>
-        <div><dt>距上次收帧</dt><dd id="age">—</dd></div>
         <div><dt>信号质量</dt><dd id="quality">—</dd></div>
         <div><dt>C 端占用判断</dt><dd id="presence">—</dd></div>
         <div><dt>目标数</dt><dd id="target-count">—</dd></div>
